@@ -1,0 +1,14 @@
+{
+  "version": "1.4.1",
+  "released": "2026-08-02",
+  "notes": "为「手机与电脑同步」做准备：后端改为监听所有网卡(0.0.0.0)并打印局域网地址，手机连同一WiFi即可访问同步；新增 Dockerfile / render.yaml / railway.json / Procfile 一键部署到公网 Node 主机，实现任意地点手机电脑互通。本地模式下打开工作台会提示如何开启云同步。",
+  "required": false,
+  "updatedAt": "2026-08-02T17:33:00+08:00",
+  "updated_at": "2026-08-02",
+  "changes": [
+    "server.js 监听 0.0.0.0 并打印局域网访问地址（手机同WiFi访问 http://<电脑IP>:3000 即可与电脑同步）",
+    "新增 Dockerfile / render.yaml(Render) / railway.json(Railway) / Procfile：一键部署到公网 Node 主机，实现异地手机电脑互通",
+    "本地模式(后端不可达)打开工作台时弹出提示：运行 node server.js 托管即可开启云同步",
+    "v1.4.0：后端+注册登录门禁+账号同步中心+抖音/小红书同步引擎"
+  ]
+}

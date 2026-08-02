@@ -1,0 +1,20 @@
+# Render.com 一键部署配置
+# 在 Render 新建 Web Service，连接此仓库，选择「Use render.yaml」
+# 部署后 Render 会分配一个 https 公网域名，手机/电脑任意地点都能同步。
+services:
+  - type: web
+    name: qsy-workbench
+    runtime: node
+    plan: free
+    buildCommand: "true"
+    startCommand: "node server.js"
+    healthCheckPath: /api/ping
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: WB_DB
+        value: "/app/data/wb.db"
+    disk:
+      name: wb-data
+      mountPath: /app/data
+      sizeGB: 1

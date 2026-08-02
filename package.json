@@ -1,0 +1,13 @@
+{
+  "name": "qing-shan-workbench",
+  "version": "1.4.0",
+  "private": true,
+  "description": "青山影像·拍剪后期工作台 —— 前端 + Node.js/SQLite 后端",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

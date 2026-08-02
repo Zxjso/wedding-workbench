@@ -1,0 +1,22 @@
+# ===== 依赖 / 运行时数据 =====
+node_modules/
+data/
+*.log
+
+# ===== 开发脚本与备份（不进仓库） =====
+_patch/
+_patch2/
+crawler/
+outputs/
+*.bak*
+*.bak2*
+*.bak3*
+*.bak4*
+douyin-sync-server.js
+gateway-server.js
+tunnel_8899.log
+workbench_data.json
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db

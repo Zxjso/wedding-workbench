@@ -1,0 +1,19 @@
+{
+  "name": "青山影像·婚摄获客工作台",
+  "short_name": "青山工作台",
+  "description": "婚礼摄影/摄像商业获客短视频工作台 · 灵感库/数据分析/小青AI诊断",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f2ea",
+  "theme_color": "#7d8f5a",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -428,7 +428,10 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
       <button class="gt-tab" data-tab="register" style="flex:1;padding:8px;border-radius:9px;background:#f3f2ee;color:var(--muted);font-weight:600;font-size:.85rem">注册</button>
     </div>
     <input id="gateUser" maxlength="6" placeholder="6位用户名（字母/数字）" style="width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:.92rem;margin-bottom:10px;letter-spacing:2px">
-    <input id="gatePwd" type="password" maxlength="6" placeholder="6位密码（字母+数字）" style="width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:.92rem;margin-bottom:12px;letter-spacing:2px">
+    <input id="gatePwd" type="password" maxlength="6" placeholder="6位密码（字母+数字）" style="width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:.92rem;margin-bottom:8px;letter-spacing:2px">
+    <label style="display:flex;align-items:center;gap:7px;font-size:.74rem;color:var(--muted);margin-bottom:10px;cursor:pointer;user-select:none">
+      <input id="gateRemember" type="checkbox" style="width:15px;height:15px;accent-color:var(--green)"> 记住我（30 天内免登录）
+    </label>
     <div id="gateErr" style="display:none;background:#fdecea;color:var(--red);font-size:.76rem;padding:8px 10px;border-radius:8px;margin-bottom:10px"></div>
     <button id="gateSubmit" style="width:100%;padding:12px;border-radius:11px;background:var(--green);color:#fff;font-weight:600;font-size:.95rem">登录</button>
     <input type="hidden" id="gateMode" value="login">

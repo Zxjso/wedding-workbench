@@ -26,7 +26,8 @@
   let wbCfg = { douyin: {}, xhs: {}, syncInterval: 'daily' };
   let curMe = null;
 
-  function getToken() { return store.get('wb_token', null); }
+  let memToken = null;
+  function getToken() { return store.get('wb_token', null) || memToken; }
   function getMeState() { return curMe; }
 
   /* ---------- 登录门禁 ---------- */
@@ -71,29 +72,44 @@
       else gateErr(r.data.error || '操作失败');
       return;
     }
-    store.set('wb_token', r.data.token);
-    store.set('wb_user', r.data.username);
+    const remember = document.getElementById('gateRemember') ? document.getElementById('gateRemember').checked : false;
+    if (remember) {
+      store.set('wb_token', r.data.token);
+      store.set('wb_user', r.data.username);
+    } else {
+      memToken = r.data.token; // 仅存内存：刷新页面即失效，强制重新登录
+    }
     enterApp(r.data);
   }
 
-  function enterApp(me) {
+  async function enterApp(me) {
     curMe = me; wbCfg = me.config || wbCfg;
-    // 云端数据作为唯一真源
-    if (Array.isArray(me.shots)) { dlShots = me.shots.map(s => ({ ...s })); store.set('wb_shots', dlShots); }
+    const t = getToken();
+    let cloud = Array.isArray(me.shots) ? me.shots : [];
+    // 关键修复：云端为空但本地有数据 → 先把本地上传，避免「登录即被清空」
+    if (cloud.length === 0 && Array.isArray(dlShots) && dlShots.length && t) {
+      const r = await api('POST', '/api/shots', { token: t, shots: dlShots });
+      if (r.ok) { cloud = dlShots.map(s => ({ ...s })); if (curMe) curMe.shots = cloud; }
+    }
+    if (cloud.length) { dlShots = cloud.map(s => ({ ...s })); store.set('wb_shots', dlShots); }
+    else if (t) { await api('POST', '/api/shots', { token: t, shots: dlShots || [] }); }
     hideGate();
     renderSessBar();
     renderAcct(me);
     if (typeof renderDeliverAll === 'function') renderDeliverAll();
-    if (me.shots && me.shots.length) toast('已同步 ' + me.shots.length + ' 场拍剪后期数据 ✅');
+    if (cloud.length) toast('已同步 ' + cloud.length + ' 场拍剪后期数据 ✅');
     else toast('欢迎，' + me.username + ' 👋');
+    startPollSync();
   }
 
   async function doLogout() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     const t = getToken();
     if (t) await api('POST', '/api/logout', { token: t });
     store.set('wb_token', null);
     store.set('wb_user', null);
     store.set('wb_shots', null);
+    memToken = null;
     dlShots = [];
     location.reload();
   }
@@ -179,6 +195,22 @@
       if (r.ok && curMe) { curMe.shots = Array.isArray(dlShots) ? dlShots : []; }
     });
   };
+
+  /* ---------- 自动同步轮询：登录后每 12 秒拉取云端，实现多端近实时互通 ---------- */
+  let pollTimer = null;
+  function startPollSync() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(async () => {
+      const t = getToken(); if (!t) return;
+      const me = await api('GET', '/api/me?token=' + encodeURIComponent(t));
+      if (me.ok && Array.isArray(me.data.shots)) {
+        dlShots = me.data.shots.map(s => ({ ...s }));
+        store.set('wb_shots', dlShots);
+        if (typeof renderDeliverAll === 'function') renderDeliverAll();
+        curMe = me.data;
+      }
+    }, 12000);
+  }
 
   /* ---------- boot ---------- */
   async function bootAuth() {

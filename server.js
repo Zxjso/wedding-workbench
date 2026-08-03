@@ -26,6 +26,12 @@ const DATA_DIR = path.join(ROOT, 'data');
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const DB_PATH = process.env.WB_DB || path.join(DATA_DIR, 'wb.db');
 
+// 数据看板摄取令牌：爬虫/脚本推送数据时使用，与登录 token 相互独立
+const INGEST_TOKEN_FILE = path.join(DATA_DIR, 'ingest_token.txt');
+let INGEST_TOKEN = process.env.WB_INGEST_TOKEN || '';
+if (!INGEST_TOKEN) { try { INGEST_TOKEN = fs.readFileSync(INGEST_TOKEN_FILE, 'utf8').trim(); } catch (e) {} }
+if (!INGEST_TOKEN) { INGEST_TOKEN = crypto.randomBytes(24).toString('hex'); try { fs.writeFileSync(INGEST_TOKEN_FILE, INGEST_TOKEN); } catch (e) {} }
+
 const db = new DatabaseSync(DB_PATH);
 db.exec(`
 CREATE TABLE IF NOT EXISTS users(
@@ -56,6 +62,32 @@ CREATE TABLE IF NOT EXISTS sync_logs(
   message TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS metrics_works(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  platform TEXT NOT NULL,
+  wkey TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  play INTEGER NOT NULL DEFAULT 0,
+  like INTEGER NOT NULL DEFAULT 0,
+  collect INTEGER NOT NULL DEFAULT 0,
+  comment INTEGER NOT NULL DEFAULT 0,
+  publish_time TEXT,
+  first_seen TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS metrics_daily(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  platform TEXT NOT NULL,
+  day TEXT NOT NULL,
+  total_play INTEGER NOT NULL DEFAULT 0,
+  total_like INTEGER NOT NULL DEFAULT 0,
+  total_collect INTEGER NOT NULL DEFAULT 0,
+  total_comment INTEGER NOT NULL DEFAULT 0,
+  work_count INTEGER NOT NULL DEFAULT 0,
+  fetched_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_metrics_works_platform ON metrics_works(platform);
+CREATE INDEX IF NOT EXISTS idx_metrics_daily_platform_day ON metrics_daily(platform, day);
 `);
 
 /* ---------------- 工具函数 ---------------- */
@@ -76,6 +108,18 @@ function verifyPw(pw, stored) {
   } catch (e) { return false; }
 }
 function newToken() { return crypto.randomBytes(24).toString('hex'); }
+
+// 把 "1.2万" / "3,456" / "12.3亿" 这类文本转成整数
+function parseCount(s) {
+  if (s === undefined || s === null || s === '') return 0;
+  s = String(s).replace(/,/g, '');
+  const m = s.match(/[\d.]+/);
+  if (!m) return 0;
+  let n = parseFloat(m[0]);
+  if (/亿/.test(s)) n *= 1e8;
+  else if (/万/.test(s)) n *= 1e4;
+  return Math.round(n);
+}
 
 /* 多端并发会话：一个账号可同时在手机/电脑登录，各自持有独立有效 token */
 function addSession(userId) {
@@ -327,6 +371,52 @@ async function handleApi(req, res, url) {
     return sendJSON(res, 200, { results });
   }
 
+  /* ---------------- 数据看板：摄取接口（独立 ingest token 鉴权） ---------------- */
+  if (p === '/api/metrics/ingest' && method === 'POST') {
+    const body = await readBody(req);
+    const itok = (req.headers && req.headers['x-ingest-token']) || (body && body.token) || url.searchParams.get('token');
+    if (!itok || itok !== INGEST_TOKEN) return sendJSON(res, 401, { error: 'ingest token invalid' });
+    const now = nowISO();
+    const today = new Date().toISOString().slice(0, 10);
+    const sources = {};
+    if (['douyin', 'xhs'].includes(body && body.platform)) sources[body.platform] = Array.isArray(body.items) ? body.items : (Array.isArray(body.works) ? body.works : []);
+    else { if (Array.isArray(body.douyin)) sources.douyin = body.douyin; if (Array.isArray(body.xhs)) sources.xhs = body.xhs; }
+    let total = 0;
+    for (const pf of Object.keys(sources)) {
+      if (pf !== 'douyin' && pf !== 'xhs') continue;
+      for (const it of (sources[pf] || [])) {
+        const title = String((it && it.title) || '').trim();
+        const wkey = pf + '|' + (title || ('__untitled_' + (total++)));
+        const play = parseCount(it && it.play), like = parseCount(it && it.like), collect = parseCount(it && it.collect), comment = parseCount(it && it.comment);
+        const ex = db.prepare('SELECT id FROM metrics_works WHERE wkey=?').get(wkey);
+        if (ex) db.prepare('UPDATE metrics_works SET title=?,play=?,like=?,collect=?,comment=?,updated_at=? WHERE wkey=?').run(title, play, like, collect, comment, now, wkey);
+        else db.prepare('INSERT INTO metrics_works(platform,wkey,title,play,like,collect,comment,publish_time,first_seen,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)').run(pf, wkey, title, play, like, collect, comment, String((it && (it.publish_time || it.date)) || ''), now, now);
+        total++;
+      }
+      const agg = db.prepare('SELECT COALESCE(SUM(play),0) tp,COALESCE(SUM(like),0) tl,COALESCE(SUM(collect),0) tc,COALESCE(SUM(comment),0) tcm,COUNT(*) cnt FROM metrics_works WHERE platform=?').get(pf);
+      db.prepare('INSERT INTO metrics_daily(platform,day,total_play,total_like,total_collect,total_comment,work_count,fetched_at) VALUES(?,?,?,?,?,?,?,?)').run(pf, today, agg.tp, agg.tl, agg.tc, agg.tcm, agg.cnt, now);
+    }
+    return sendJSON(res, 200, { ok: true, count: total, updatedAt: now });
+  }
+
+  /* ---------------- 数据看板：读取接口（需登录 token） ---------------- */
+  if (p === '/api/metrics' && method === 'GET') {
+    const tk = url.searchParams.get('token');
+    if (!uidFromToken(tk)) return sendJSON(res, 401, { error: '请先登录' });
+    const pf = url.searchParams.get('platform') || 'all';
+    const plats = pf === 'all' ? ['douyin', 'xhs'] : [pf];
+    const ph = plats.map(() => '?').join(',');
+    const works = db.prepare('SELECT platform,title,play,like,collect,comment,publish_time,updated_at FROM metrics_works WHERE platform IN (' + ph + ') ORDER BY play DESC').all(...plats);
+    const summary = {};
+    for (const pp of ['douyin', 'xhs']) {
+      const a = db.prepare('SELECT COALESCE(SUM(play),0) plays,COALESCE(SUM(like),0) likes,COALESCE(SUM(collect),0) collects,COALESCE(SUM(comment),0) comments,COUNT(*) cnt FROM metrics_works WHERE platform=?').get(pp);
+      summary[pp] = { play: a.plays, like: a.likes, collect: a.collects, comment: a.comments, cnt: a.cnt };
+    }
+    const daily = db.prepare('SELECT platform,day,total_play,total_like,total_collect,total_comment,work_count,fetched_at FROM metrics_daily WHERE platform IN (' + ph + ') ORDER BY fetched_at').all(...plats);
+    const last = db.prepare('SELECT MAX(fetched_at) mx FROM metrics_daily').get();
+    return sendJSON(res, 200, { works, summary, daily, lastSync: last.mx, platform: pf });
+  }
+
   return sendJSON(res, 404, { error: 'not found' });
 }
 
@@ -351,6 +441,7 @@ function buildMe(u, token) {
   for (const s of snaps) { try { snapMap[s.platform] = JSON.parse(s.payload); } catch (e) {} }
   return {
     token,
+    ingestToken: INGEST_TOKEN,
     username: u.username,
     config: { douyin, xhs, syncInterval: u.sync_interval },
     shots,

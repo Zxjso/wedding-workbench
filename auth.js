@@ -189,6 +189,7 @@
   }
 
   /* ---------- 列表变更钩子：同步到云端 ---------- */
+  window.wbGetToken = getToken; // 供数据看板等模块取登录 token
   window.pushShots = function () {
     const t = getToken(); if (!t) return;
     api('POST', '/api/shots', { token: t, shots: dlShots }).then(r => {

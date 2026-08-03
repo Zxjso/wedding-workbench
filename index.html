@@ -444,6 +444,7 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
     <div class="nav-sec">数据中心</div>
     <button class="nav-it on" data-m="overview"><span class="n-ic">📊</span>数据总览</button>
     <button class="nav-it" data-m="videos"><span class="n-ic">🎬</span>我的视频<span class="n-badge" id="myCnt">0</span></button>
+    <button class="nav-it" data-m="metrics"><span class="n-ic">📈</span>数据看板</button>
     <button class="nav-it" data-m="finance"><span class="n-ic">📒</span>财务与订单<span class="n-badge" id="ordCnt">0</span></button>
     <button class="nav-it" data-m="diagnosis"><span class="n-ic">🩺</span>账号诊断</button>
     <button class="nav-it" data-m="xiaoqing"><span class="n-ic">🌿</span>小青AI诊断</button>
@@ -573,6 +574,34 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
         </div>
       </div>
       <div id="myVideoList"></div>
+    </section>
+
+    <!-- 数据看板 -->
+    <section class="modsec" id="mod-metrics">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+        <span class="vf-lab" style="font-size:.82rem">📱 平台</span>
+        <button class="vf-btn on" data-mp="all" onclick="loadMetrics('all')">全部</button>
+        <button class="vf-btn" data-mp="douyin" onclick="loadMetrics('douyin')">抖音</button>
+        <button class="vf-btn" data-mp="xhs" onclick="loadMetrics('xhs')">小红书</button>
+        <span id="metricsSync" style="margin-left:auto;font-size:.74rem;color:var(--muted)"></span>
+      </div>
+      <div class="grid-stat" id="metricsStats"></div>
+      <div class="card"><h3>📈 数据趋势 <span class="tagline">由本地爬虫每4小时自动同步</span></h3><div id="metricsTrend" style="width:100%"></div></div>
+      <div class="card"><h3>🏆 爆款作品榜（按播放量）</h3><div id="metricsTop"></div></div>
+      <div class="card" style="border:1.5px dashed var(--green);background:#f4f7ee">
+        <h3>🔑 自动同步接入 <span class="tagline">把下面信息填进你电脑上的 crawl_self.py 运行环境</span></h3>
+        <p style="font-size:.76rem;color:var(--green-d);margin-bottom:8px">在你本机 crawler 目录运行爬虫时，设置这两个环境变量即可把数据自动推送到云端工作台：</p>
+        <div style="font-family:monospace;font-size:.72rem;background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;white-space:pre-wrap;word-break:break-all" id="metricsEnv"></div>
+        <p style="font-size:.72rem;color:var(--muted);margin-top:8px">⚠️ 此 token 仅用于写入数据，请勿外泄。手动导入见下方。</p>
+      </div>
+      <div class="card"><h3>✋ 手动导入（兜底）</h3>
+        <p style="font-size:.74rem;color:var(--muted);margin-bottom:8px">把爬虫导出的 JSON（形如 <code>{"platform":"douyin","items":[{"title":"...","play":"1.2万","like":"300"}]}</code>）粘贴进来，点导入即可。也可用小红书创作中心 CSV 导出后转 JSON。</p>
+        <textarea id="metricsPaste" rows="4" placeholder='{"platform":"douyin","items":[{"title":"视频标题","play":"12000","like":"300","collect":"50","comment":"20"}]}' style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;font-size:.82rem"></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn sm" onclick="metricsManualImport()">⬆️ 导入到工作台</button>
+          <span id="metricsMsg" style="font-size:.74rem;color:var(--green-d);align-self:center"></span>
+        </div>
+      </div>
     </section>
 
     <!-- 账号诊断 -->
@@ -838,6 +867,7 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
   <div style="width:40px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 10px"></div>
   <div class="ms-it" data-m="xiaoqing">🌿 小青AI诊断 · 视频体检</div>
   <div class="ms-it" data-m="diagnosis">🩺 账号诊断 · 7天破局计划</div>
+  <div class="ms-it" data-m="metrics">📈 数据看板 · 抖音/小红书</div>
 </div>
 
 <div id="mask"></div>
@@ -1554,7 +1584,7 @@ const codeForCat=val=>{if(!val)return "";val=String(val).trim();if(WB_DATA.cats.
 const fmtName=id=>{const c=WB_DATA.fmts.find(c=>c[0]===id);return c?c[1]:id};
 const store={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1800)};
-const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库"};
+const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库"};
 
 /* --- 导航 --- */
 function switchMod(m){
@@ -1566,6 +1596,7 @@ function switchMod(m){
   if(m==="xiaoqing")renderXqAccount();
 
   if(m==="delivered")renderDeliverAll();
+  if(m==="metrics")loadMetrics();
   window.scrollTo(0,0);
 }
 $$(".nav-it").forEach(b=>b.onclick=()=>switchMod(b.dataset.m));
@@ -1577,6 +1608,89 @@ $("#mask").onclick=()=>{$("#mask").classList.remove("on");$("#modal").classList.
 $(".m-close").onclick=()=>{$("#modal").classList.remove("on");$("#mask").classList.remove("on")};
 $("#topDate").textContent=new Date().toLocaleDateString("zh-CN",{month:"long",day:"numeric",weekday:"long"});
 $("#syncTime").textContent="数据更新于 "+WB_DATA.updatedAt;
+
+/* ================= 数据看板（抖音/小红书 爬虫自动同步） ================= */
+let metricsCurPlat = 'all';
+function mFmt(n){ n=Number(n)||0; if(n>=1e8) return (n/1e8).toFixed(1)+'亿'; if(n>=1e4) return (n/1e4).toFixed(1)+'万'; return String(n); }
+function mCard(lab,val,sub){ return '<div class="stat"><div class="s-lab">'+lab+'</div><div class="s-val">'+val+'</div><div class="s-sub">'+(sub||'')+'</div></div>'; }
+async function loadMetrics(plat){
+  if(plat) metricsCurPlat = plat;
+  $$('#mod-metrics .vf-btn').forEach(b=>b.classList.toggle('on', b.dataset.mp===metricsCurPlat));
+  const t = window.wbGetToken && window.wbGetToken();
+  if(!t){ return; }
+  try{
+    const [mj, mej] = await Promise.all([
+      fetch('/api/metrics?token='+encodeURIComponent(t)+'&platform='+metricsCurPlat).then(r=>r.json()),
+      fetch('/api/me?token='+encodeURIComponent(t)).then(r=>r.json())
+    ]);
+    window.__wbIngestToken = (mej && mej.ingestToken) || '';
+    renderMetrics(mj);
+  }catch(e){ console.error(e); }
+}
+function renderMetrics(j){
+  const works=(j.works||[]), sum=(j.summary||{}), pf=metricsCurPlat;
+  const sp = pf==='all'?['douyin','xhs']:[pf];
+  let tp=0,tl=0,tc=0,tm=0,tn=0;
+  sp.forEach(p=>{ const s=sum[p]||{}; tp+=(s.play||0); tl+=(s.like||0); tc+=(s.collect||0); tm+=(s.comment||0); tn+=(s.cnt||0); });
+  document.getElementById('metricsStats').innerHTML =
+    mCard('作品数', tn) + mCard('总播放', mFmt(tp)) + mCard('总点赞', mFmt(tl)) + mCard('总收藏', mFmt(tc)) + mCard('总评论', mFmt(tm));
+  renderMetricsTrend(j.daily||[], sp);
+  const top = works.slice(0,30);
+  const topEl = document.getElementById('metricsTop');
+  if(!top.length){ topEl.innerHTML = '<p style="font-size:.84rem;color:var(--muted)">暂无数据。在你本机运行 crawl_self.py 并配置 WORKBENCH_URL 后，这里会自动出现你的抖音/小红书作品数据。</p>'; }
+  else {
+    topEl.innerHTML = '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem"><thead><tr style="text-align:left;color:var(--muted)"><th style="padding:6px 8px">平台</th><th style="padding:6px 8px">标题</th><th style="padding:6px 8px">播放</th><th style="padding:6px 8px">点赞</th><th style="padding:6px 8px">收藏</th><th style="padding:6px 8px">评论</th></tr></thead><tbody>'+
+      top.map(w=>'<tr style="border-top:1px solid var(--line)"><td style="padding:6px 8px">'+(w.platform==='douyin'?'抖音':'小红书')+'</td><td style="padding:6px 8px;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(w.title)+'">'+esc(w.title||'—')+'</td><td style="padding:6px 8px">'+mFmt(w.play)+'</td><td style="padding:6px 8px">'+mFmt(w.like)+'</td><td style="padding:6px 8px">'+mFmt(w.collect)+'</td><td style="padding:6px 8px">'+mFmt(w.comment)+'</td></tr>').join('')+
+      '</tbody></table></div>';
+  }
+  document.getElementById('metricsSync').textContent = j.lastSync ? ('最近同步：'+new Date(j.lastSync).toLocaleString('zh-CN')) : '尚未同步';
+  renderMetricsEnv();
+}
+function renderMetricsTrend(daily, plats){
+  const el = document.getElementById('metricsTrend');
+  if(!daily || !daily.length){ el.innerHTML='<p style="font-size:.82rem;color:var(--muted)">暂无趋势数据，运行爬虫后会出现。</p>'; return; }
+  const byDay={};
+  daily.forEach(d=>{ if(plats.indexOf(d.platform)<0) return; if(!byDay[d.day]) byDay[d.day]={day:d.day,play:0,like:0,ts:0}; const ts=new Date(d.fetched_at).getTime(); if(ts>=byDay[d.day].ts){ byDay[d.day].play=d.total_play; byDay[d.day].like=d.total_like; byDay[d.day].ts=ts; } });
+  const days=Object.values(byDay).sort((a,b)=>a.day<b.day?-1:1);
+  if(days.length<2){ el.innerHTML='<p style="font-size:.82rem;color:var(--muted)">同步次数太少，至少 2 次同步后才会画出趋势线。</p>'; return; }
+  const W=640,H=220,pad=34;
+  const maxV=Math.max(1,...days.map(d=>Math.max(d.play,d.like)));
+  const x=i=> pad + i*(W-2*pad)/(days.length-1);
+  const y=v=> H-pad - (v/maxV)*(H-2*pad);
+  const line=(key,color)=> '<polyline fill="none" stroke="'+color+'" stroke-width="2.5" points="'+days.map((d,i)=>x(i)+','+y(d[key])).join(' ')+'"/>';
+  const dots=(key,color)=> days.map((d,i)=>'<circle cx="'+x(i)+'" cy="'+y(d[key])+'" r="3" fill="'+color+'"/>').join('');
+  const step=Math.max(1,Math.ceil(days.length/6));
+  const xlabels=days.map((d,i)=>{ if(i%step!==0 && i!==days.length-1) return ''; return '<text x="'+x(i)+'" y="'+(H-12)+'" font-size="10" fill="#888" text-anchor="middle">'+d.day.slice(5)+'</text>'; }).join('');
+  const ylabels=[0,0.5,1].map(f=>'<text x="6" y="'+y(maxV*f)+'" font-size="9" fill="#aaa">'+mFmt(Math.round(maxV*f))+'</text>').join('');
+  el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-height:240px">'
+    +'<line x1="'+pad+'" y1="'+(H-pad)+'" x2="'+(W-pad)+'" y2="'+(H-pad)+'" stroke="#ddd"/>'
+    +ylabels+xlabels
+    +line('play','#e63946')+dots('play','#e63946')
+    +line('like','#2a9d8f')+dots('like','#2a9d8f')
+    +'<g font-size="11"><rect x="'+(W-150)+'" y="6" width="10" height="10" fill="#e63946"/><text x="'+(W-134)+'" y="15" fill="#666">播放</text><rect x="'+(W-86)+'" y="6" width="10" height="10" fill="#2a9d8f"/><text x="'+(W-70)+'" y="15" fill="#666">点赞</text></g>'
+    +'</svg>';
+}
+function renderMetricsEnv(){
+  const tok = window.__wbIngestToken || '';
+  const url = location.origin + '/api/metrics/ingest';
+  document.getElementById('metricsEnv').textContent =
+    'WORKBENCH_URL='+url+'\nWB_TOKEN='+tok+'\n\n# 运行爬虫时加上上面两行环境变量即可自动推送：\nWORKBENCH_URL="'+url+'" WB_TOKEN="'+tok+'" python -u crawl_self.py';
+}
+async function metricsManualImport(){
+  const t = window.wbGetToken && window.wbGetToken();
+  const raw = document.getElementById('metricsPaste').value.trim();
+  const msg = document.getElementById('metricsMsg');
+  if(!raw){ msg.textContent='请先粘贴 JSON'; return; }
+  let payload; try{ payload=JSON.parse(raw); }catch(e){ msg.textContent='JSON 解析失败：'+e.message; return; }
+  if(!payload.items && !payload.works && !payload.douyin && !payload.xhs){ msg.textContent='格式应为 {"platform":"douyin","items":[...]}'; return; }
+  try{
+    const r = await fetch('/api/metrics/ingest', { method:'POST', headers:{'Content-Type':'application/json','x-ingest-token':(window.__wbIngestToken||'')}, body: JSON.stringify(payload) });
+    const j = await r.json();
+    if(r.status===401){ msg.textContent='ingest token 无效'; return; }
+    msg.textContent = j.ok ? ('导入成功，'+j.count+' 条 ✓') : ('失败：'+(j.error||''));
+    if(j.ok) loadMetrics();
+  }catch(e){ msg.textContent='请求失败：'+e.message; }
+}
 
 /* --- 抖音 OAuth 实时同步（需后端 server.js 配合） --- */
 const DOUYIN_BACKEND = "http://localhost:3001"; // 默认值，可被下方配置覆盖

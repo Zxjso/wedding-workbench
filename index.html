@@ -885,7 +885,7 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
 <div id="mask"></div>
 <div id="modal"><button class="m-close">✕</button><div id="modalBody"></div></div>
 
-<!-- 模块密码锁（数据总览 / 财务与订单） -->
+<!-- 模块密码锁（数据总览 / 财务与订单 / 数据看板） -->
 <div id="lockMask">
   <div id="lockModal">
     <div class="lc-ic">🔒</div>
@@ -1614,9 +1614,9 @@ const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");setTim
 const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库"};
 
 /* --- 导航 --- */
-/* --- 模块密码锁（数据总览 / 财务与订单） --- */
+/* --- 模块密码锁（数据总览 / 财务与订单 / 数据看板） --- */
 const LOCK_PASS = 'qsyx2026';
-const LOCKED_MODS = new Set(['overview','finance']);
+const LOCKED_MODS = new Set(['overview','finance','metrics']);
 let lockUnlocked = false;
 let pendingLockMod = null;
 function isLockUnlocked(){ return lockUnlocked || (function(){try{return sessionStorage.getItem('wb_lock')==='1'}catch(e){return false}})(); }

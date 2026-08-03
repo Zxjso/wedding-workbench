@@ -156,6 +156,18 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
 #modal.on{display:block;opacity:1;transform:translate(-50%,-50%) scale(1)}
 #modal .m-close{position:absolute;right:16px;top:14px;font-size:1.4rem;color:var(--muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:var(--transition)}
 #modal .m-close:hover{background:var(--green-l);color:var(--ink)}
+#lockMask{position:fixed;inset:0;background:rgba(28,30,22,.62);display:none;z-index:300;backdrop-filter:blur(5px);align-items:center;justify-content:center}
+#lockMask.on{display:flex}
+#lockModal{width:min(360px,90vw);background:var(--card);border-radius:var(--radius-xl);padding:26px 24px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.35);animation:lockIn .25s ease}
+@keyframes lockIn{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+#lockModal .lc-ic{font-size:2.4rem;line-height:1}
+#lockModal .lc-title{font-size:1.05rem;font-weight:800;margin:8px 0 2px}
+#lockModal .lc-sub{font-size:.74rem;color:var(--muted);margin-bottom:16px}
+#lockModal .lc-input{width:100%;box-sizing:border-box;padding:12px 14px;font-size:1rem;border:1.5px solid var(--line);border-radius:12px;background:#fff;outline:none;text-align:center;letter-spacing:2px}
+#lockModal .lc-input:focus{border-color:var(--green)}
+#lockModal .lc-err{font-size:.74rem;color:#c0392b;min-height:18px;margin:8px 0 4px}
+#lockModal .lc-actions{display:flex;gap:10px;margin-top:6px}
+#lockModal .lc-actions .btn{flex:1}
 .m-sec{margin-top:16px}
 .m-sec b{font-size:.82rem;color:var(--green-d);display:block;margin-bottom:6px;font-weight:700}
 
@@ -442,10 +454,10 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
 </div>    <div class="nav-sec">接单执行</div>
     <button class="nav-it" data-m="delivered"><span class="n-ic">📦</span>拍剪后期<span class="n-badge" id="dlCnt">0</span></button>
     <div class="nav-sec">数据中心</div>
-    <button class="nav-it on" data-m="overview"><span class="n-ic">📊</span>数据总览</button>
     <button class="nav-it" data-m="videos"><span class="n-ic">🎬</span>我的视频<span class="n-badge" id="myCnt">0</span></button>
     <button class="nav-it" data-m="metrics"><span class="n-ic">📈</span>数据看板</button>
     <button class="nav-it" data-m="finance"><span class="n-ic">📒</span>财务与订单<span class="n-badge" id="ordCnt">0</span></button>
+    <button class="nav-it on" data-m="overview"><span class="n-ic">📊</span>数据总览</button>
     <button class="nav-it" data-m="diagnosis"><span class="n-ic">🩺</span>账号诊断</button>
     <button class="nav-it" data-m="xiaoqing"><span class="n-ic">🌿</span>小青AI诊断</button>
     <div class="nav-sec">内容军火库</div>
@@ -856,11 +868,11 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
 
 <!-- 手机底部Tab -->
 <nav id="tabbar">
-  <button data-m="overview" class="on"><span class="ti">📊</span>总览</button>
   <button data-m="viral"><span class="ti">🔥</span>灵感库</button>
   <button data-m="videos"><span class="ti">🎬</span>我的视频</button>
   <button data-m="delivered"><span class="ti">📦</span>拍剪后期</button>
   <button data-m="finance"><span class="ti">📒</span>财务</button>
+  <button data-m="overview" class="on"><span class="ti">📊</span>总览</button>
   <button id="moreBtn"><span class="ti">☰</span>更多</button>
 </nav>
 <div id="moreSheet">
@@ -872,6 +884,21 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
 
 <div id="mask"></div>
 <div id="modal"><button class="m-close">✕</button><div id="modalBody"></div></div>
+
+<!-- 模块密码锁（数据总览 / 财务与订单） -->
+<div id="lockMask">
+  <div id="lockModal">
+    <div class="lc-ic">🔒</div>
+    <div class="lc-title">输入访问密码</div>
+    <div class="lc-sub" id="lockSub">「数据总览」和「财务与订单」已加密</div>
+    <input id="lockInput" class="lc-input" type="password" placeholder="请输入密码" autocomplete="off" />
+    <div class="lc-err" id="lockErr"></div>
+    <div class="lc-actions">
+      <button class="btn ghost" id="lockCancel">返回</button>
+      <button class="btn" id="lockOk">确定</button>
+    </div>
+  </div>
+</div>
 <div id="updateModal" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,92vw);max-height:86vh;overflow:auto;background:var(--card);border-radius:20px;padding:26px 24px;z-index:95;box-shadow:0 24px 70px rgba(0,0,0,.28)">
   <div style="text-align:center">
     <div style="font-size:2.6rem;line-height:1">📬</div>
@@ -1587,7 +1614,42 @@ const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");setTim
 const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库"};
 
 /* --- 导航 --- */
+/* --- 模块密码锁（数据总览 / 财务与订单） --- */
+const LOCK_PASS = 'qsyx2026';
+const LOCKED_MODS = new Set(['overview','finance']);
+let lockUnlocked = false;
+let pendingLockMod = null;
+function isLockUnlocked(){ return lockUnlocked || (function(){try{return sessionStorage.getItem('wb_lock')==='1'}catch(e){return false}})(); }
+function setLockUnlocked(){ lockUnlocked=true; try{sessionStorage.setItem('wb_lock','1');}catch(e){} }
+function gateOpen(){ const g=document.getElementById('loginGate'); return !!g && g.offsetParent!==null; }
+function showLockModal(){
+  const lm=document.getElementById('lockMask'), inp=document.getElementById('lockInput');
+  document.getElementById('lockErr').textContent=''; inp.value='';
+  lm.classList.add('on'); setTimeout(()=>inp.focus(),60);
+}
+function hideLockModal(){ document.getElementById('lockMask').classList.remove('on'); }
+function tryUnlock(){
+  const inp=document.getElementById('lockInput'), val=(inp.value||'').trim();
+  if(val===LOCK_PASS){ setLockUnlocked(); hideLockModal(); inp.value='';
+    if(pendingLockMod){ const t=pendingLockMod; pendingLockMod=null; switchMod(t); } return true; }
+  document.getElementById('lockErr').textContent='密码错误，请重试'; inp.value=''; inp.focus(); return false;
+}
+function bootLockCheck(){
+  if(gateOpen()) return;                       // 登录门禁还在 → 交给 enterApp 再触发
+  const cur=document.querySelector('.modsec.on');
+  const m=cur?cur.id.replace('mod-',''):'overview';
+  if(LOCKED_MODS.has(m)&&!isLockUnlocked()) showLockModal();
+}
+window.bootLockCheck=bootLockCheck;
+document.getElementById('lockOk').onclick=tryUnlock;
+document.getElementById('lockCancel').onclick=()=>{ hideLockModal(); pendingLockMod=null; switchMod('videos'); };
+document.getElementById('lockInput').addEventListener('keydown',e=>{ if(e.key==='Enter') tryUnlock(); });
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(bootLockCheck,200));
+else setTimeout(bootLockCheck,200);
+
 function switchMod(m){
+  if(LOCKED_MODS.has(m)&&!isLockUnlocked()){ pendingLockMod=m; showLockModal(); return; }
+  pendingLockMod=null;
   $$(".modsec").forEach(s=>s.classList.toggle("on",s.id==="mod-"+m));
   $$(".nav-it").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
   $$("#tabbar button[data-m]").forEach(b=>b.classList.toggle("on",b.dataset.m===m));

@@ -94,6 +94,7 @@
     if (cloud.length) { dlShots = cloud.map(s => ({ ...s })); store.set('wb_shots', dlShots); }
     else if (t) { await api('POST', '/api/shots', { token: t, shots: dlShots || [] }); }
     hideGate();
+    if (typeof window.bootLockCheck === 'function') window.bootLockCheck();
     renderSessBar();
     renderAcct(me);
     if (typeof renderDeliverAll === 'function') renderDeliverAll();

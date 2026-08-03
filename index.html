@@ -510,6 +510,10 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
         <button class="vf-btn" data-opf="xhs" onclick="setOVP('xhs')" style="font-size:.8rem;padding:5px 14px">小红书</button>
       </div>
       <div class="grid-stat" id="ovStats"></div>
+      <div class="card" style="border:1.5px solid #c9b6e6;background:#faf7ff">
+        <h3>📱 平台账号数据 <span class="tagline">来自抖音/小红书创作者后台自动同步</span></h3>
+        <div id="ovPlatformStats"></div>
+      </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin:-4px 0 14px;flex-wrap:wrap">
         <button class="btn sm" onclick="openCreatorApp('douyin')">🎬 打开抖音创作平台</button>
         <button class="btn sm ghost" onclick="openCreatorApp('xiaohongshu')" style="background:#fff">📕 打开小红书创作中心</button>
@@ -586,6 +590,10 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
         </div>
       </div>
       <div id="myVideoList"></div>
+      <div class="card" style="border:1.5px solid #c9b6e6;background:#faf7ff;margin-top:16px">
+        <h3>🔗 平台作品对照 <span class="tagline">我的视频 ↔ 抖音/小红书作品（按标题自动匹配）</span></h3>
+        <div id="videosMatch"></div>
+      </div>
     </section>
 
     <!-- 数据看板 -->
@@ -600,6 +608,10 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
       <div class="grid-stat" id="metricsStats"></div>
       <div class="card"><h3>📈 数据趋势 <span class="tagline">由本地爬虫每4小时自动同步</span></h3><div id="metricsTrend" style="width:100%"></div></div>
       <div class="card"><h3>🏆 爆款作品榜（按播放量）</h3><div id="metricsTop"></div></div>
+      <div class="card" style="border:1.5px solid #c9b6e6;background:#faf7ff">
+        <h3>💬 私信概览 <span class="tagline">抖音/小红书创作者后台未读私信</span></h3>
+        <div id="metricsDm"></div>
+      </div>
       <div class="card" style="border:1.5px dashed var(--green);background:#f4f7ee">
         <h3>🔑 自动同步接入 <span class="tagline">把下面信息填进你电脑上的 crawl_self.py 运行环境</span></h3>
         <p style="font-size:.76rem;color:var(--green-d);margin-bottom:8px">在你本机 crawler 目录运行爬虫时，设置这两个环境变量即可把数据自动推送到云端工作台：</p>
@@ -1659,6 +1671,7 @@ function switchMod(m){
 
   if(m==="delivered")renderDeliverAll();
   if(m==="metrics")loadMetrics();
+  if(m==="videos")loadVideosMatch();
   window.scrollTo(0,0);
 }
 $$(".nav-it").forEach(b=>b.onclick=()=>switchMod(b.dataset.m));
@@ -1706,7 +1719,23 @@ function renderMetrics(j){
       '</tbody></table></div>';
   }
   document.getElementById('metricsSync').textContent = j.lastSync ? ('最近同步：'+new Date(j.lastSync).toLocaleString('zh-CN')) : '尚未同步';
+  renderMetricsDm(j.dms || [], sp, j.dmSummary || {});
   renderMetricsEnv();
+}
+function renderMetricsDm(dms, plats, dmSummary){
+  const el = document.getElementById('metricsDm');
+  const list = (dms || []).filter(d => plats.indexOf(d.platform) >= 0);
+  const totUnread = (dmSummary.douyin ? dmSummary.douyin.unread : 0) + (dmSummary.xhs ? dmSummary.xhs.unread : 0);
+  if(!list.length){ el.innerHTML = '<p style="font-size:.82rem;color:var(--muted)">暂无私信数据。在你本机运行 crawl_self.py 抓取后台私信后，这里会显示未读数与最近会话。</p>'; return; }
+  el.innerHTML =
+    '<div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">' +
+      mCard('未读私信', totUnread) +
+      mCard('抖音未读', dmSummary.douyin ? dmSummary.douyin.unread : 0) +
+      mCard('小红书未读', dmSummary.xhs ? dmSummary.xhs.unread : 0) +
+    '</div>' +
+    '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem"><thead><tr style="text-align:left;color:var(--muted)"><th style="padding:6px 8px">平台</th><th style="padding:6px 8px">联系人</th><th style="padding:6px 8px">最近消息</th><th style="padding:6px 8px">未读</th></tr></thead><tbody>' +
+    list.map(d=>'<tr style="border-top:1px solid var(--line)"><td style="padding:6px 8px">'+(d.platform==='douyin'?'抖音':'小红书')+'</td><td style="padding:6px 8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(d.peer)+'">'+esc(d.peer||'—')+'</td><td style="padding:6px 8px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(d.last_message)+'">'+esc(d.last_message||'—')+'</td><td style="padding:6px 8px;color:'+(d.unread>0?'#c0392b':'#999')+'">'+esc(String(d.unread||0))+'</td></tr>').join('') +
+    '</tbody></table></div>';
 }
 function renderMetricsTrend(daily, plats){
   const el = document.getElementById('metricsTrend');
@@ -1908,6 +1937,34 @@ function renderMyVideos(){
     <div style="font-size:.8rem;background:#faf9f2;border-radius:10px;padding:10px 12px">${diagnose(v).map(t=>t+"<br>").join("")}</div>
     <div style="margin-top:8px;display:flex;gap:6px;justify-content:flex-end;align-items:center;flex-wrap:wrap">${v.url?`<button class="btn sm" style="background:var(--green-l);color:var(--green-d);flex:none" onclick="event.stopPropagation();window.open('${v.url.replace(/'/g,"\\'")}','_blank')">▶ 查看原视频</button>`:`<span style="font-size:.72rem;color:var(--muted)">暂无链接</span>`}<button class="btn sm ghost" style="background:#f0e6ff;color:#7c3aed;border-color:#d4c4ff" onclick="videoDoubaoDiagnose(${v.id})">🤖 豆包深度分析</button><button class="btn sm ghost" onclick="editVideoInline(${v.id})">✏️ 编辑</button><button class="btn sm ghost" onclick="delVideo(${v.id})">🗑 删除</button></div></div>`}).join("");
 }
+async function loadVideosMatch(){
+  const el=document.getElementById('videosMatch');
+  if(!el) return;
+  const t=window.wbGetToken&&window.wbGetToken();
+  const mine=myVideos.filter(v=>!v.demo);
+  if(!mine.length){ el.innerHTML='<p style="font-size:.82rem;color:var(--muted)">录入「我的视频」后，这里会把你的每条视频与抖音/小红书作品按标题自动匹配，对照平台真实播放/点赞。</p>'; return; }
+  if(!t){ el.innerHTML='<p style="font-size:.82rem;color:var(--muted)">登录后加载平台作品进行匹配。</p>'; return; }
+  try{
+    const j=await fetch('/api/metrics?token='+encodeURIComponent(t)+'&platform=all').then(r=>r.json());
+    const works=j.works||[];
+    const rows=mine.map(v=>{
+      const target=v.plat==='抖音'?'douyin':v.plat==='小红书'?'xhs':null;
+      let best=null,bestLen=0;
+      for(const w of works){
+        if(target&&w.platform!==target) continue;
+        const a=(v.title||''),b=(w.title||'');
+        if(a.includes(b)&&b.length>=4&&b.length>bestLen){bestLen=b.length;best=w;}
+        else if(b.includes(a)&&a.length>=4&&a.length>bestLen){bestLen=a.length;best=w;}
+      }
+      return {v,best};
+    });
+    const matched=rows.filter(r=>r.best).length;
+    el.innerHTML='<p style="font-size:.76rem;color:var(--muted);margin-bottom:8px">已匹配 '+matched+' / '+mine.length+' 条视频到平台作品（按标题相似度自动关联）。</p>'+
+      '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:.8rem"><thead><tr style="text-align:left;color:var(--muted)"><th style="padding:6px 8px">我的视频</th><th style="padding:6px 8px">平台</th><th style="padding:6px 8px">本地播放</th><th style="padding:6px 8px">平台作品</th><th style="padding:6px 8px">平台播放</th><th style="padding:6px 8px">平台点赞</th><th style="padding:6px 8px">状态</th></tr></thead><tbody>'+
+      rows.map(r=>{const v=r.v,b=r.best; return '<tr style="border-top:1px solid var(--line)"><td style="padding:6px 8px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(v.title)+'">'+esc(v.title||'—')+'</td><td style="padding:6px 8px">'+(v.plat||'—')+'</td><td style="padding:6px 8px">'+fmt(v.plays||0)+'</td><td style="padding:6px 8px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(b?b.title:'')+'">'+(b?esc(b.title):'<span style="color:#999">未匹配</span>')+'</td><td style="padding:6px 8px">'+(b?mFmt(b.play):'—')+'</td><td style="padding:6px 8px">'+(b?mFmt(b.like):'—')+'</td><td style="padding:6px 8px;color:'+(b?'#2a9d8f':'#999')+'">'+(b?'已关联':'待匹配')+'</td></tr>';}).join('')+
+      '</tbody></table></div>';
+  }catch(e){ el.innerHTML='<p style="font-size:.8rem;color:var(--muted)">匹配加载失败</p>'; }
+}
 window.delVideo=id=>{myVideos=myVideos.filter(v=>v.id!==id);store.set("wb_myvideos",myVideos);renderMyVideos();renderOverview()};
 /* 每条视频的豆包深度诊断：把完整数据丢给豆包做专业分析 */
 window.videoDoubaoDiagnose=id=>{
@@ -2044,6 +2101,22 @@ function renderOverview(){
   if(typeof orders!=="undefined"&&Array.isArray(orders)){const real=orders.filter(o=>!o.demo);fin.n=real.length;fin.totP=real.reduce((a,o)=>a+(+o.price||0),0);fin.totPaid=real.reduce((a,o)=>a+(+o.paid||0),0);fin.due=fin.totP-fin.totPaid;}
   $("#ovFinStats").innerHTML=[["订单总数",fin.n+" 单","与财务模块同步",""],["已收金额","¥"+fmt(fin.totPaid),"已落袋为安","up"],["待收尾款","¥"+fmt(fin.due),fin.due>0?"有"+orders.filter(o=>!o.demo&&o.paid<o.price).length+"单未结清":"全部结清 ✅",fin.due>0?"down":"up"],["平均客单",fin.n?"¥"+fmt(Math.round(fin.totP/fin.n)):"—","巴中参考 ¥1500-3500",""]]
     .map(s=>`<div class="stat"><div class="s-lab">${s[0]}</div><div class="s-val">${s[1]}</div><div class="s-sub ${s[3]}">${s[2]}</div></div>`).join("");
+  // 平台账号数据（抖音/小红书，来自爬虫自动同步）
+  loadPlatformStats();
+}
+async function loadPlatformStats(){
+  const el=document.getElementById('ovPlatformStats');
+  const t=window.wbGetToken&&window.wbGetToken();
+  if(!t){ if(el) el.innerHTML='<p style="font-size:.8rem;color:var(--muted)">登录后显示平台数据</p>'; return; }
+  const pf=ovPlat==='dy'?'douyin':ovPlat==='xhs'?'xhs':'all';
+  try{
+    const j=await fetch('/api/metrics?token='+encodeURIComponent(t)+'&platform='+pf).then(r=>r.json());
+    if(!el) return;
+    const sp=pf==='all'?['douyin','xhs']:[pf];
+    let tp=0,tl=0,tc=0,tm=0,tn=0,tu=0;
+    sp.forEach(p=>{ const s=(j.summary&&j.summary[p])||{}; tp+=(s.play||0); tl+=(s.like||0); tc+=(s.collect||0); tm+=(s.comment||0); tn+=(s.cnt||0); const d=(j.dmSummary&&j.dmSummary[p])||{}; tu+=(d.unread||0); });
+    el.innerHTML='<div class="grid-stat" style="margin-top:8px">'+mCard('作品数',tn)+mCard('总播放',mFmt(tp))+mCard('总点赞',mFmt(tl))+mCard('总收藏',mFmt(tc))+mCard('未读私信',tu)+'</div><p style="font-size:.72rem;color:var(--muted);margin-top:8px">数据由本机爬虫抓取后自动同步，与「数据看板」同源。</p>';
+  }catch(e){ if(el) el.innerHTML='<p style="font-size:.8rem;color:var(--muted)">加载平台数据失败</p>'; }
 }
 
 /* --- 诊断页 --- */

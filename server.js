@@ -88,6 +88,16 @@ CREATE TABLE IF NOT EXISTS metrics_daily(
 );
 CREATE INDEX IF NOT EXISTS idx_metrics_works_platform ON metrics_works(platform);
 CREATE INDEX IF NOT EXISTS idx_metrics_daily_platform_day ON metrics_daily(platform, day);
+CREATE TABLE IF NOT EXISTS metrics_dm(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  platform TEXT NOT NULL,
+  wkey TEXT NOT NULL,
+  peer TEXT NOT NULL DEFAULT '',
+  last_message TEXT NOT NULL DEFAULT '',
+  unread INTEGER NOT NULL DEFAULT 0,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_metrics_dm_platform ON metrics_dm(platform);
 `);
 
 /* ---------------- 工具函数 ---------------- */
@@ -396,7 +406,29 @@ async function handleApi(req, res, url) {
       const agg = db.prepare('SELECT COALESCE(SUM(play),0) tp,COALESCE(SUM(like),0) tl,COALESCE(SUM(collect),0) tc,COALESCE(SUM(comment),0) tcm,COUNT(*) cnt FROM metrics_works WHERE platform=?').get(pf);
       db.prepare('INSERT INTO metrics_daily(platform,day,total_play,total_like,total_collect,total_comment,work_count,fetched_at) VALUES(?,?,?,?,?,?,?,?)').run(pf, today, agg.tp, agg.tl, agg.tc, agg.tcm, agg.cnt, now);
     }
-    return sendJSON(res, 200, { ok: true, count: total, updatedAt: now });
+    /* ----- 私信(DM) ----- */
+    const dmSources = {};
+    if (body && body.dms && typeof body.dms === 'object') {
+      if (Array.isArray(body.dms.douyin)) dmSources.douyin = body.dms.douyin;
+      if (Array.isArray(body.dms.xhs)) dmSources.xhs = body.dms.xhs;
+    } else if (['douyin', 'xhs'].includes(body && body.platform) && Array.isArray(body.dms)) {
+      dmSources[body.platform] = body.dms;
+    }
+    let dmTotal = 0;
+    for (const pf of Object.keys(dmSources)) {
+      if (pf !== 'douyin' && pf !== 'xhs') continue;
+      for (const dm of (dmSources[pf] || [])) {
+        const peer = String((dm && dm.peer) || (dm && dm.name) || (dm && dm.contact) || '').trim();
+        const wkey = pf + '|' + (peer || ('__dm_' + (dmTotal++)));
+        const lastMsg = String((dm && dm.last) || (dm && dm.last_message) || (dm && dm.message) || '').trim().slice(0, 500);
+        const unread = parseInt((dm && dm.unread) || 0, 10) || 0;
+        const ex = db.prepare('SELECT id FROM metrics_dm WHERE wkey=?').get(wkey);
+        if (ex) db.prepare('UPDATE metrics_dm SET peer=?,last_message=?,unread=?,updated_at=? WHERE wkey=?').run(peer, lastMsg, unread, now, wkey);
+        else db.prepare('INSERT INTO metrics_dm(platform,wkey,peer,last_message,unread,updated_at) VALUES(?,?,?,?,?,?)').run(pf, wkey, peer, lastMsg, unread, now);
+        dmTotal++;
+      }
+    }
+    return sendJSON(res, 200, { ok: true, count: total, dmCount: dmTotal, updatedAt: now });
   }
 
   /* ---------------- 数据看板：读取接口（需登录 token） ---------------- */
@@ -414,7 +446,13 @@ async function handleApi(req, res, url) {
     }
     const daily = db.prepare('SELECT platform,day,total_play,total_like,total_collect,total_comment,work_count,fetched_at FROM metrics_daily WHERE platform IN (' + ph + ') ORDER BY fetched_at').all(...plats);
     const last = db.prepare('SELECT MAX(fetched_at) mx FROM metrics_daily').get();
-    return sendJSON(res, 200, { works, summary, daily, lastSync: last.mx, platform: pf });
+    const dms = db.prepare('SELECT platform,peer,last_message,unread,updated_at FROM metrics_dm WHERE platform IN (' + ph + ') ORDER BY unread DESC, updated_at DESC').all(...plats);
+    const dmSummary = {};
+    for (const pp of ['douyin', 'xhs']) {
+      const d = db.prepare('SELECT COUNT(*) cnt, COALESCE(SUM(unread),0) unread FROM metrics_dm WHERE platform=?').get(pp);
+      dmSummary[pp] = { convs: d.cnt, unread: d.unread };
+    }
+    return sendJSON(res, 200, { works, summary, daily, dms, dmSummary, lastSync: last.mx, platform: pf });
   }
 
   return sendJSON(res, 404, { error: 'not found' });

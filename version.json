@@ -1,15 +1,14 @@
 {
-  "version": "1.5.3",
-  "released": "2026-08-03",
-  "notes": "新增私信抓取与三块数据关联：数据看板加私信概览，数据总览加平台账号数据卡，我的视频加平台作品对照。",
+  "version": "1.6.0",
+  "released": "2026-08-06",
+  "notes": "新增「爆款拆解」模块：把 WorkBuddy 拆好的爆款视频结构化分析（10 维）存进工作台，沉淀个人爆款素材库，支持标签检索与一键复制拆解提示词。",
   "required": false,
-  "updatedAt": "2026-08-03T16:10:00+08:00",
-  "updated_at": "2026-08-03",
+  "updatedAt": "2026-08-06T17:25:00+08:00",
+  "updated_at": "2026-08-06",
   "changes": [
-    "后端：新增 metrics_dm 表 + /api/metrics/ingest 支持 dms 字段 + /api/metrics 返回 dms 与 dmSummary",
-    "数据看板：新增「💬 私信概览」区块（抖音/小红书未读私信）",
-    "数据总览：新增「📱 平台账号数据」卡（作品数/总播放/总点赞/总收藏/未读私信，按平台视图筛选）",
-    "我的视频：新增「🔗 平台作品对照」卡（按标题自动匹配抖音/小红书作品，对照真实播放/点赞）",
-    "爬虫：新增抖音/小红书私信抓取（crawl_douyin_dm/crawl_xhs_dm），推送携带 dms"
+    "后端：新增 breakdown 表（user_id/title/url/platform/analysis/tags/created_at）+ /api/breakdown GET（列表）/ POST（保存/删除），需登录 token",
+    "前端：新增「爆款拆解」导航（侧栏 + 更多菜单）、mod-bd 录入/列表模块、loadBreakdown/saveBreakdown/delBreakdown/copyBdPrompt",
+    "爆款拆解与 viral 灵感库互补：灵感库=拍什么，拆解库=学别人为什么火",
+    "缓存与安全：sw.js CACHE 升 wb-app-v1.6.0，本模块不进 LOCKED_MODS（与我的视频同口径，未加密码锁）"
   ]
 }

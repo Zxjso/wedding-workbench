@@ -462,6 +462,7 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
     <button class="nav-it" data-m="xiaoqing"><span class="n-ic">🌿</span>小青AI诊断</button>
     <div class="nav-sec">内容军火库</div>
     <button class="nav-it" data-m="viral"><span class="n-ic">🔥</span>婚礼拍摄灵感库<span class="n-badge" id="viralCnt">0</span></button>
+    <button class="nav-it" data-m="bd"><span class="n-ic">🧩</span>爆款拆解</button>
     <div class="sync-card">
       <b>抖音数据同步</b> <span id="syncTime" style="font-weight:400;font-size:.72rem;color:#8a6a12">—</span><br>
       <span style="font-size:.72rem;color:#8a6a12">抖音号：40632468696</span>
@@ -594,6 +595,27 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
         <h3>🔗 平台作品对照 <span class="tagline">我的视频 ↔ 抖音/小红书作品（按标题自动匹配）</span></h3>
         <div id="videosMatch"></div>
       </div>
+    </section>
+
+    <!-- 爆款拆解 -->
+    <section class="modsec" id="mod-bd">
+      <div class="card">
+        <h3>🧩 爆款拆解库 <span class="tagline">把 WorkBuddy 拆好的爆款分析存进来，沉淀你的爆款素材库</span></h3>
+        <p style="font-size:.76rem;color:var(--muted);margin:0 0 10px;line-height:1.6">用法：在 WorkBuddy 里说「拆一下这条视频：链接」，它会按 10 个维度给出结构化拆解。把结果粘贴到下方「拆解内容」保存即可随时回看。点 🤖 可一键复制拆解提示词去 WorkBuddy 跑。</p>
+        <div class="form-grid">
+          <div class="fg-it" style="grid-column:span 2"><label>视频标题 / 名称</label><input id="bdTitle" placeholder="如：凌晨4点推开新娘房门"></div>
+          <div class="fg-it"><label>平台</label><select id="bdPlat"><option>抖音</option><option>小红书</option><option>其他</option></select></div>
+          <div class="fg-it"><label>视频链接</label><input id="bdUrl" placeholder="粘贴分享链接（可选）"></div>
+          <div class="fg-it" style="grid-column:span 2"><label>标签（逗号分隔，便于检索）</label><input id="bdTags" placeholder="如：钩子,情绪,婚礼纪实"></div>
+          <div class="fg-it" style="grid-column:span 2"><label>拆解内容（10 维分析 / 结论 / 复刻方案）</label><textarea id="bdAnalysis" rows="8" placeholder="把 WorkBuddy 拆解出的内容粘贴到这里…"></textarea></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn" id="bdSave">💾 保存拆解</button>
+          <button class="btn sm ghost" id="bdCopyPrompt">🤖 复制拆解提示词</button>
+          <button class="btn sm ghost" id="bdClear">清空</button>
+        </div>
+      </div>
+      <div id="bdList"></div>
     </section>
 
     <!-- 数据看板 -->
@@ -892,6 +914,7 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
   <div class="ms-it" data-m="xiaoqing">🌿 小青AI诊断 · 视频体检</div>
   <div class="ms-it" data-m="diagnosis">🩺 账号诊断 · 7天破局计划</div>
   <div class="ms-it" data-m="metrics">📈 数据看板 · 抖音/小红书</div>
+  <div class="ms-it" data-m="bd">🧩 爆款拆解 · 拆解库</div>
 </div>
 
 <div id="mask"></div>
@@ -1623,7 +1646,7 @@ const codeForCat=val=>{if(!val)return "";val=String(val).trim();if(WB_DATA.cats.
 const fmtName=id=>{const c=WB_DATA.fmts.find(c=>c[0]===id);return c?c[1]:id};
 const store={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1800)};
-const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库"};
+const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库",bd:"爆款拆解"};
 
 /* --- 导航 --- */
 /* --- 模块密码锁（数据总览 / 财务与订单 / 数据看板） --- */
@@ -1672,6 +1695,7 @@ function switchMod(m){
   if(m==="delivered")renderDeliverAll();
   if(m==="metrics")loadMetrics();
   if(m==="videos")loadVideosMatch();
+  if(m==="bd")loadBreakdown();
   window.scrollTo(0,0);
 }
 $$(".nav-it").forEach(b=>b.onclick=()=>switchMod(b.dataset.m));
@@ -1683,6 +1707,77 @@ $("#mask").onclick=()=>{$("#mask").classList.remove("on");$("#modal").classList.
 $(".m-close").onclick=()=>{$("#modal").classList.remove("on");$("#mask").classList.remove("on")};
 $("#topDate").textContent=new Date().toLocaleDateString("zh-CN",{month:"long",day:"numeric",weekday:"long"});
 $("#syncTime").textContent="数据更新于 "+WB_DATA.updatedAt;
+
+/* ================= 爆款拆解（记录库，后端持久化） ================= */
+let __bd = [];
+function escBd(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+async function loadBreakdown(){
+  const t = window.wbGetToken && window.wbGetToken();
+  if(!t) return;
+  try{
+    const r = await fetch('/api/breakdown?token='+encodeURIComponent(t), {cache:'no-store'});
+    const j = await r.json();
+    if(!r.ok) return;
+    __bd = j.items || [];
+    renderBreakdown();
+  }catch(e){}
+}
+function renderBreakdown(){
+  const box = document.getElementById('bdList');
+  if(!box) return;
+  if(!__bd.length){
+    box.innerHTML = '<div class="card" style="margin-top:14px"><p style="font-size:.84rem;color:var(--muted)">还没有拆解记录。让 WorkBuddy 拆解一条爆款视频，再把结果存进来吧。</p></div>';
+    return;
+  }
+  box.innerHTML = __bd.map(it=>{
+    const tags = (it.tags||'').split(',').map(x=>x.trim()).filter(Boolean).map(t=>'<span class="tag">'+escBd(t)+'</span>').join(' ');
+    const when = (it.created_at||'').slice(0,16).replace('T',' ');
+    return '<div class="card" style="margin-top:14px">'
+      + '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">'
+      + '<div style="min-width:0"><h4 style="margin:0 0 4px;font-size:.98rem">'+escBd(it.title||'(未命名拆解)')+'</h4>'
+      + '<div style="font-size:.74rem;color:var(--muted);margin-bottom:6px">'+escBd(it.platform||'')+(it.url?' · <a href="'+escBd(it.url)+'" target="_blank" rel="noopener">查看原视频 ↗</a>':'')+' · '+when+'</div></div>'
+      + '<button class="btn sm ghost" onclick="delBreakdown('+it.id+')">🗑 删除</button></div>'
+      + (tags?'<div style="margin:6px 0">'+tags+'</div>':'')
+      + '<div style="white-space:pre-wrap;font-size:.86rem;line-height:1.7;color:#334155;max-height:340px;overflow:auto">'+escBd(it.analysis||'')+'</div>'
+      + '</div>';
+  }).join('');
+}
+async function saveBreakdown(){
+  const t = window.wbGetToken && window.wbGetToken();
+  if(!t){ toast('请先登录'); return; }
+  const title = document.getElementById('bdTitle').value.trim();
+  const analysis = document.getElementById('bdAnalysis').value.trim();
+  if(!title && !analysis){ toast('请至少填写标题或拆解内容'); return; }
+  const body = { token:t, title, url:document.getElementById('bdUrl').value.trim(), platform:document.getElementById('bdPlat').value, tags:document.getElementById('bdTags').value.trim(), analysis };
+  try{
+    const r = await fetch('/api/breakdown',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    const j = await r.json();
+    if(!r.ok){ toast((j&&j.error)||'保存失败'); return; }
+    toast('已保存拆解 ✅');
+    document.getElementById('bdTitle').value='';document.getElementById('bdUrl').value='';document.getElementById('bdTags').value='';document.getElementById('bdAnalysis').value='';
+    await loadBreakdown();
+  }catch(e){ toast('网络错误'); }
+}
+async function delBreakdown(id){
+  const t = window.wbGetToken && window.wbGetToken();
+  if(!t) return;
+  try{
+    const r = await fetch('/api/breakdown',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({token:t,action:'delete',id})});
+    if(r.ok){ toast('已删除'); await loadBreakdown(); }
+  }catch(e){}
+}
+function copyBdPrompt(){
+  const title = document.getElementById('bdTitle').value.trim();
+  const url = document.getElementById('bdUrl').value.trim();
+  const plat = document.getElementById('bdPlat').value;
+  const prompt = '请拆解这条'+(plat==='其他'?'':plat)+'爆款视频：'+(title?('《'+title+'》'):'')+(url?('\n链接：'+url):'\n（若没有链接，请基于以下描述拆解）')+'\n按 10 个维度拆解：选题逻辑、黄金3秒钩子、脚本结构、情绪曲线、视听语言、互动设计、数据表现推断、可迁移元素、复刻方案。婚摄赛道语境。';
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(prompt).then(()=>toast('已复制拆解提示词，去 WorkBuddy 粘贴 🤖'),()=>toast('复制失败，请手动复制'));
+  } else { toast('当前环境不支持自动复制'); }
+}
+document.getElementById('bdSave').onclick = saveBreakdown;
+document.getElementById('bdCopyPrompt').onclick = copyBdPrompt;
+document.getElementById('bdClear').onclick = ()=>{ document.getElementById('bdTitle').value=''; document.getElementById('bdUrl').value=''; document.getElementById('bdTags').value=''; document.getElementById('bdAnalysis').value=''; };
 
 /* ================= 数据看板（抖音/小红书 爬虫自动同步） ================= */
 let metricsCurPlat = 'all';

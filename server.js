@@ -98,17 +98,6 @@ CREATE TABLE IF NOT EXISTS metrics_dm(
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_metrics_dm_platform ON metrics_dm(platform);
-CREATE TABLE IF NOT EXISTS breakdown(
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  title TEXT NOT NULL DEFAULT '',
-  url TEXT NOT NULL DEFAULT '',
-  platform TEXT NOT NULL DEFAULT '',
-  analysis TEXT NOT NULL DEFAULT '',
-  tags TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_breakdown_user ON breakdown(user_id, created_at);
 `);
 
 /* ---------------- 工具函数 ---------------- */
@@ -313,7 +302,7 @@ async function handleApi(req, res, url) {
   if (p === '/api/ping') return sendJSON(res, 200, { ok: true, time: nowISO() });
 
   // 需要 token 的接口
-  const authPaths = ['/api/me', '/api/config', '/api/sync', '/api/shots', '/api/breakdown', '/api/logout'];
+  const authPaths = ['/api/me', '/api/config', '/api/sync', '/api/shots', '/api/logout'];
   let uid = null;
   if (authPaths.includes(p) && method !== 'GET') {
     const body = await readBody(req);
@@ -464,32 +453,6 @@ async function handleApi(req, res, url) {
       dmSummary[pp] = { convs: d.cnt, unread: d.unread };
     }
     return sendJSON(res, 200, { works, summary, daily, dms, dmSummary, lastSync: last.mx, platform: pf });
-  }
-
-  /* ---------------- 爆款拆解记录（需登录 token） ---------------- */
-  if (p === '/api/breakdown' && method === 'GET') {
-    const tk = url.searchParams.get('token');
-    const uid = uidFromToken(tk);
-    if (!uid) return sendJSON(res, 401, { error: '请先登录' });
-    const rows = db.prepare('SELECT id,title,url,platform,analysis,tags,created_at FROM breakdown WHERE user_id=? ORDER BY created_at DESC').all(uid);
-    return sendJSON(res, 200, { items: rows });
-  }
-  if (p === '/api/breakdown' && method === 'POST') {
-    const b = req._body;
-    if (b && b.action === 'delete') {
-      const id = parseInt(b.id, 10);
-      if (id) db.prepare('DELETE FROM breakdown WHERE id=? AND user_id=?').run(id, req._uid);
-      return sendJSON(res, 200, { ok: true });
-    }
-    const title = String((b && b.title) || '').trim().slice(0, 300);
-    const urlv = String((b && b.url) || '').trim().slice(0, 2000);
-    const platform = String((b && b.platform) || '').trim().slice(0, 20);
-    const analysis = String((b && b.analysis) || '').slice(0, 20000);
-    const tags = String((b && b.tags) || '').trim().slice(0, 200);
-    if (!title && !analysis) return sendJSON(res, 400, { error: '请至少填写标题或拆解内容' });
-    db.prepare('INSERT INTO breakdown(user_id,title,url,platform,analysis,tags,created_at) VALUES(?,?,?,?,?,?,?)')
-      .run(req._uid, title, urlv, platform, analysis, tags, nowISO());
-    return sendJSON(res, 200, { ok: true });
   }
 
   return sendJSON(res, 404, { error: 'not found' });

@@ -455,6 +455,27 @@ async function handleApi(req, res, url) {
     return sendJSON(res, 200, { works, summary, daily, dms, dmSummary, lastSync: last.mx, platform: pf });
   }
 
+  /* ---------------- 数据分析（千瓜式聚合，读取后端 metrics 数据） ---------------- */
+  if (p === '/api/analytics' && method === 'GET') {
+    const tk = url.searchParams.get('token');
+    if (!uidFromToken(tk)) return sendJSON(res, 401, { error: '请先登录' });
+    const pf = url.searchParams.get('platform') || 'all';
+    const plats = pf === 'all' ? ['douyin', 'xhs'] : [pf];
+    const ph = plats.map(() => '?').join(',');
+    const works = db.prepare('SELECT platform,title,play,like,collect,comment,publish_time,updated_at FROM metrics_works WHERE platform IN (' + ph + ') ORDER BY play DESC').all(...plats);
+    const agg = db.prepare('SELECT COALESCE(SUM(play),0) tp,COALESCE(SUM(like),0) tl,COALESCE(SUM(collect),0) tc,COALESCE(SUM(comment),0) tcm,COUNT(*) cnt FROM metrics_works WHERE platform IN (' + ph + ')').get(...plats);
+    const noteCount = agg.cnt, totalPlay = agg.tp, totalLike = agg.tl, totalCollect = agg.tc, totalComment = agg.tcm;
+    const totalEngage = totalLike + totalCollect + totalComment;
+    const avgEngageRate = totalPlay > 0 ? +(totalEngage / totalPlay * 100).toFixed(2) : 0;
+    const estFans = totalLike > 0 ? Math.round(totalLike / 0.05) : 0;
+    const trend = db.prepare('SELECT day,total_play,total_like,total_collect,total_comment,work_count FROM metrics_daily WHERE platform IN (' + ph + ') ORDER BY day').all(...plats).map(d => ({ day: d.day, play: d.total_play, like: d.total_like, collect: d.total_collect, comment: d.total_comment, workCount: d.work_count }));
+    const topWorks = works.map(w => { const eng = (w.like || 0) + (w.collect || 0) + (w.comment || 0); const rate = (w.play || 0) > 0 ? +(eng / w.play * 100).toFixed(2) : 0; return { platform: w.platform, title: w.title, play: w.play || 0, like: w.like || 0, collect: w.collect || 0, comment: w.comment || 0, engage: eng, rate }; }).sort((a, b) => b.rate - a.rate).slice(0, 8);
+    const dmSummary = {};
+    for (const pp of ['douyin', 'xhs']) { const d = db.prepare('SELECT COUNT(*) cnt, COALESCE(SUM(unread),0) unread FROM metrics_dm WHERE platform=?').get(pp); dmSummary[pp] = { convs: d.cnt, unread: d.unread }; }
+    const last = db.prepare('SELECT MAX(fetched_at) mx FROM metrics_daily').get();
+    return sendJSON(res, 200, { platform: pf, overview: { noteCount, totalPlay, totalLike, totalCollect, totalComment, totalEngage, avgEngageRate, estFans }, trend, topWorks, works, dmSummary, lastSync: last.mx });
+  }
+
   return sendJSON(res, 404, { error: 'not found' });
 }
 

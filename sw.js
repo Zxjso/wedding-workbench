@@ -2,7 +2,7 @@
  * 作用：App 壳缓存（离线可用）+ 自动应用更新 + 手机系统级弹窗通知
  * 版本数据/灵感推送走 network-first，保证用户总能拿到最新内容。
  */
-const CACHE = 'wb-app-v1.8.1';
+const CACHE = 'wb-app-v1.8.2';
 const STATE = 'wb-state-v1';
 const SHELL = [
   './',

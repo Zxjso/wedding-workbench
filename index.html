@@ -459,7 +459,7 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
     <button class="nav-it" data-m="finance"><span class="n-ic">📒</span>财务与订单<span class="n-badge" id="ordCnt">0</span></button>
     <button class="nav-it on" data-m="overview"><span class="n-ic">📊</span>数据总览</button>
     <button class="nav-it" data-m="diagnosis"><span class="n-ic">🩺</span>账号诊断</button>
-    <button class="nav-it" data-m="xiaoqing"><span class="n-ic">🌿</span>小青AI诊断</button>
+    <button class="nav-it" data-m="xiaoqing"><span class="n-ic">🧨</span>爆款拆解</button>
     <div class="nav-sec">内容军火库</div>
     <button class="nav-it" data-m="viral"><span class="n-ic">🔥</span>婚礼拍摄灵感库<span class="n-badge" id="viralCnt">0</span></button>
     <div class="sync-card">
@@ -641,7 +641,7 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
     <!-- 小青AI诊断 -->
     <section class="modsec" id="mod-xiaoqing">
       <div class="card" style="background:linear-gradient(135deg,#7d8f5a,#5f7041);color:#fff">
-        <h3 style="color:#fff">🌿 小青 · 青山影像专属AI影像分析师</h3>
+        <h3 style="color:#fff">🧨 爆款拆解 · 青山影像专属AI影像分析师</h3>
         <p style="font-size:.84rem;opacity:.93;line-height:1.7">把你的抖音分享文本（长按视频→分享→复制链接的那整段）粘贴给我，我立刻做<b>8项体检</b>：流量钩子 / 文艺黑名单 / 同城标签 / 话题配置 / 干货转化词 / 互动引导 / 账号历史对照 / 标题结构。报告可一键存入「我的视频」金色诊断块。我拿不准的，会转交拾光操盘手做人工深度诊断。</p>
       </div>
       <div class="card">
@@ -890,7 +890,7 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
 </nav>
 <div id="moreSheet">
   <div style="width:40px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 10px"></div>
-  <div class="ms-it" data-m="xiaoqing">🌿 小青AI诊断 · 视频体检</div>
+  <div class="ms-it" data-m="xiaoqing">🧨 爆款拆解 · 视频体检</div>
   <div class="ms-it" data-m="diagnosis">🩺 账号诊断 · 7天破局计划</div>
   <div class="ms-it" data-m="metrics">📈 数据看板 · 抖音/小红书</div>
 </div>
@@ -1624,7 +1624,7 @@ const codeForCat=val=>{if(!val)return "";val=String(val).trim();if(WB_DATA.cats.
 const fmtName=id=>{const c=WB_DATA.fmts.find(c=>c[0]===id);return c?c[1]:id};
 const store={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1800)};
-const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库"};
+const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"爆款拆解",viral:"婚礼拍摄灵感库"};
 
 /* --- 导航 --- */
 /* --- 模块密码锁（数据总览 / 财务与订单 / 数据看板） --- */

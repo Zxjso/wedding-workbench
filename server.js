@@ -32,25 +32,6 @@ let INGEST_TOKEN = process.env.WB_INGEST_TOKEN || '';
 if (!INGEST_TOKEN) { try { INGEST_TOKEN = fs.readFileSync(INGEST_TOKEN_FILE, 'utf8').trim(); } catch (e) {} }
 if (!INGEST_TOKEN) { INGEST_TOKEN = crypto.randomBytes(24).toString('hex'); try { fs.writeFileSync(INGEST_TOKEN_FILE, INGEST_TOKEN); } catch (e) {} }
 
-// ===== 爆款拆解 LLM 配置 =====
-// 优先读环境变量，其次读项目根目录 server.env（与爬虫 settings.env 风格一致，已被 .gitignore 忽略）
-function loadEnvFile(p) {
-  const out = {};
-  try {
-    const t = fs.readFileSync(p, 'utf8');
-    for (const line of t.split('\n')) {
-      const m = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*?)\s*$/);
-      if (m && !m[2].startsWith('#')) out[m[1]] = m[2].replace(/^["']|["']$/g, '');
-    }
-  } catch (e) {}
-  return out;
-}
-const fEnv = loadEnvFile(path.join(ROOT, 'server.env'));
-const getCfg = k => process.env[k] || fEnv[k] || '';
-const LLM_BASE_URL = (getCfg('LLM_BASE_URL') || 'https://api.openai.com/v1').replace(/\/+$/, '');
-const LLM_API_KEY = getCfg('LLM_API_KEY');
-const LLM_MODEL = getCfg('LLM_MODEL') || 'gpt-4o-mini';
-
 const db = new DatabaseSync(DB_PATH);
 db.exec(`
 CREATE TABLE IF NOT EXISTS users(
@@ -472,55 +453,6 @@ async function handleApi(req, res, url) {
       dmSummary[pp] = { convs: d.cnt, unread: d.unread };
     }
     return sendJSON(res, 200, { works, summary, daily, dms, dmSummary, lastSync: last.mx, platform: pf });
-  }
-
-  /* ---------------- 爆款拆解（调用 LLM，OpenAI 兼容接口） ---------------- */
-  if (p === '/api/breakdown' && method === 'POST') {
-    const tk = url.searchParams.get('token');
-    if (!uidFromToken(tk)) return sendJSON(res, 401, { error: '请先登录' });
-    if (!LLM_API_KEY) return sendJSON(res, 200, { ok: false, configured: false, error: '工作台尚未配置 LLM 密钥。请在服务器 server.env 中填入 LLM_API_KEY（OpenAI / DeepSeek / 混元 等兼容接口的 Key），可选填 LLM_BASE_URL 与 LLM_MODEL。' });
-    let raw = '';
-    try { for await (const c of req) raw += c; } catch (e) {}
-    let input = {};
-    try { input = JSON.parse(raw || '{}'); } catch (e) {}
-    const text = (input.text || '').toString().trim();
-    const platform = (input.platform || '通用').toString().trim();
-    if (!text) return sendJSON(res, 400, { error: '请粘贴视频链接或标题+描述' });
-
-    const BD_FRAMEWORK = `爆款拆解方法论（婚礼/婚摄赛道适用）：
-【数据健康线】完播率>40%、3秒完播率>60%、点赞率>5%、评论率>1%、转发率>0.5%、主页点击率>3%、粉丝转化比>15%；流量结构：推荐页80-95%。
-【黄金3秒钩子】冲突/悬念/反常识/视觉冲击/情感共鸣/利益前置；避免"大家好我是XX"式自我介绍开头。
-【脚本结构】倒金字塔(前3秒冲击+痛点→每15秒一个钩子→结尾获得感缺口)；问题-方案-证据三段式；节奏0-3s吸引、3-15s核心、15s后深化、结尾互动引导。
-【12大共性】黄金3秒、情绪密度、低认知门槛、强互动、场景真实、音乐节奏、系列化、热点借势、价值可视化、人性洞察、信息密度、封面标题关键词。
-【7大人性】利他、好奇、从众、共鸣、娱乐、占便宜、自我提升。
-【拆解边界】只做公开拆解与规律总结，标注"推断"vs"实测"；真诚感>网感，不抄别人客片素材、不伪造情绪。`;
-
-    const sys = `你是一位资深的短视频爆款拆解分析师，尤其熟悉婚礼/婚摄赛道。请基于以下「爆款拆解方法论」对用户提供的视频进行逐维度拆解。\n\n【方法论】\n${BD_FRAMEWORK}\n\n请严格按以下 JSON 结构输出（只输出 JSON，不要任何额外说明文字）：\n{\n  "summary": "一句话定位：这条视频为什么火",\n  "dimensions": [\n    {"key":"topic","title":"选题逻辑","content":"面向什么人群、解决什么痛点、什么场景代入"},\n    {"key":"hook","title":"黄金3秒钩子","content":"前3秒用了哪种钩子类型，是否有效"},\n    {"key":"structure","title":"脚本结构","content":"倒金字塔/三段式运用，节奏如何"},\n    {"key":"emotion","title":"情绪曲线","content":"情绪如何起伏、哪个点最戳人"},\n    {"key":"visual","title":"视听语言","content":"景别/运镜/剪辑/音乐/画面风格"},\n    {"key":"interaction","title":"互动设计","content":"评论引导、站队、挑战等设计"},\n    {"key":"data","title":"数据表现推断","content":"推断其完播/点赞/评论率处于什么水平，标注推断"},\n    {"key":"transferable","title":"可迁移元素","content":"哪些元素可以迁移到婚摄账号"},\n    {"key":"replay","title":"复刻方案","content":"可落地的3-5条动作"}
-  ]\n}`;
-    const userMsg = `平台：${platform}\n待拆解视频内容（链接或标题+描述）：\n${text}`;
-
-    const mkBody = withFmt => ({ model: LLM_MODEL, messages: [{ role: 'system', content: sys }, { role: 'user', content: userMsg }], temperature: 0.7, ...(withFmt ? { response_format: { type: 'json_object' } } : {}) });
-    const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + LLM_API_KEY };
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 60000);
-      let resp = await fetch(`${LLM_BASE_URL}/chat/completions`, { method: 'POST', headers, body: JSON.stringify(mkBody(true)), signal: ctrl.signal });
-      if (!resp.ok && (resp.status === 400 || resp.status === 422)) {
-        resp = await fetch(`${LLM_BASE_URL}/chat/completions`, { method: 'POST', headers, body: JSON.stringify(mkBody(false)), signal: ctrl.signal });
-      }
-      clearTimeout(timer);
-      const j = await resp.json();
-      const content = j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content;
-      if (!content) return sendJSON(res, 502, { error: 'LLM 返回为空', raw: j });
-      let structured = null;
-      try { structured = JSON.parse(content); } catch (e) { structured = null; }
-      if (!structured || !Array.isArray(structured.dimensions)) {
-        structured = { summary: '', dimensions: [{ key: 'raw', title: '拆解报告', content }] };
-      }
-      return sendJSON(res, 200, { ok: true, configured: true, summary: structured.summary || '', dimensions: structured.dimensions || [], platform });
-    } catch (e) {
-      return sendJSON(res, 502, { error: '调用 LLM 失败：' + (e.message || e), hint: '请检查 LLM_BASE_URL / LLM_API_KEY / LLM_MODEL 配置是否与 OpenAI 兼容' });
-    }
   }
 
   return sendJSON(res, 404, { error: 'not found' });

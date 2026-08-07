@@ -27,4 +27,5 @@ server.env
 # ===== 废弃的临时探针脚本（曾含 token，已清空并忽略） =====
 _probe.js
 _probe_push.js
+_rm_*.js
 

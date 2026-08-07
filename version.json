@@ -1,14 +1,13 @@
 {
-  "version": "1.8.0",
+  "version": "1.8.1",
   "released": "2026-08-07",
-  "notes": "下线「数据分析」模块；新增「🧨 爆款拆解」AI 模块：粘贴视频链接/标题+描述，调用可配置的 LLM（OpenAI / DeepSeek / 混元 等兼容接口）按 9 维度拆解爆量逻辑并给出复刻方案，方法论源自婚摄爆款拆解框架。",
+  "notes": "下线「爆款拆解」AI 模块（用户不再需要）。当前代码状态：v1.7.0 数据分析模块已移除，爆款拆解模块亦移除，回到以数据看板/灵感库/诊断等为主的工作台基线。",
   "required": false,
-  "updatedAt": "2026-08-07T19:50:00+08:00",
+  "updatedAt": "2026-08-07T20:10:00+08:00",
   "updated_at": "2026-08-07",
   "changes": [
-    "下线：移除 v1.7.0 的「数据分析」模块（前端导航/区块/JS + 后端 /api/analytics 路由）",
-    "后端：新增 /api/breakdown（登录鉴权），调用 LLM_API_KEY 配置的 OpenAI 兼容接口，按 9 维度输出结构化拆解报告；支持 server.env 配置 LLM_BASE_URL / LLM_API_KEY / LLM_MODEL",
-    "前端：新增「🧨 爆款拆解」导航（侧栏+手机更多菜单+底部Tab区），输入区+平台选择+9维度卡片式报告渲染",
-    "配置：新增 server.env.example，server.env 已被 .gitignore 忽略，密钥不进仓库"
+    "下线：移除 v1.8.0 新增的「🧨 爆款拆解」AI 模块（前端导航/更多菜单/mod-breakdown 区块/JS + 后端 /api/breakdown 路由 + LLM 配置读取）",
+    "保留：v1.7.0 的「数据分析」模块此前已移除；当前无 standalone 数据分析与爆款拆解模块",
+    "说明：server.env.example 仍保留作为后端密钥配置模板（server.env 已被 .gitignore 忽略）"
   ]
 }

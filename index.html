@@ -462,7 +462,6 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
     <button class="nav-it" data-m="xiaoqing"><span class="n-ic">🌿</span>小青AI诊断</button>
     <div class="nav-sec">内容军火库</div>
     <button class="nav-it" data-m="viral"><span class="n-ic">🔥</span>婚礼拍摄灵感库<span class="n-badge" id="viralCnt">0</span></button>
-    <button class="nav-it" data-m="breakdown"><span class="n-ic">🧨</span>爆款拆解<span class="n-badge" style="background:#ff5a5f;color:#fff">AI</span></button>
     <div class="sync-card">
       <b>抖音数据同步</b> <span id="syncTime" style="font-weight:400;font-size:.72rem;color:#8a6a12">—</span><br>
       <span style="font-size:.72rem;color:#8a6a12">抖音号：40632468696</span>
@@ -877,26 +876,6 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
       <div id="sub-convert" class="sub-mod"><div id="convertList"></div></div>
     </section>
 
-    <!-- 爆款拆解（AI 自动版，调用工作台后端 /api/breakdown） -->
-    <section class="modsec" id="mod-breakdown">
-      <div class="card" style="background:linear-gradient(135deg,#fff3f3,#ffe9e9);border:1.5px solid #ffd0d0">
-        <h3 style="margin-top:0">🧨 爆款拆解 · AI 一键分析</h3>
-        <p style="font-size:.82rem;color:#9a4a4a;line-height:1.6;margin:0 0 10px">把一条你想研究的爆款视频的<b>链接</b>，或<b>标题+描述</b>粘贴进来，AI 会按 9 个维度拆解它的爆量逻辑，并给出可复制的复刻方案（基于婚摄爆款方法论）。</p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
-          <select id="bdPlatform" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.84rem;background:#fff">
-            <option value="通用">📱 通用</option>
-            <option value="抖音">🎵 抖音</option>
-            <option value="小红书">📕 小红书</option>
-          </select>
-          <button class="btn" id="bdGo" style="background:#ff5a5f;color:#fff;border:none">🔥 开始拆解</button>
-          <button class="btn ghost" id="bdClear">清空</button>
-        </div>
-        <textarea id="bdInput" rows="5" placeholder="粘贴视频分享链接，或：&#10;标题：婚礼当天新郎偷偷做了这件事…&#10;描述：评论区都在问同款机位，其实我们用了…" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:.86rem;line-height:1.6"></textarea>
-        <div id="bdMsg" style="font-size:.76rem;margin-top:6px"></div>
-      </div>
-      <div id="bdResult" style="margin-top:14px"></div>
-    </section>
-
   </div>
 </div>
 
@@ -914,7 +893,6 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
   <div class="ms-it" data-m="xiaoqing">🌿 小青AI诊断 · 视频体检</div>
   <div class="ms-it" data-m="diagnosis">🩺 账号诊断 · 7天破局计划</div>
   <div class="ms-it" data-m="metrics">📈 数据看板 · 抖音/小红书</div>
-  <div class="ms-it" data-m="breakdown">🧨 爆款拆解 · AI一键分析</div>
 </div>
 
 <div id="mask"></div>
@@ -1646,7 +1624,7 @@ const codeForCat=val=>{if(!val)return "";val=String(val).trim();if(WB_DATA.cats.
 const fmtName=id=>{const c=WB_DATA.fmts.find(c=>c[0]===id);return c?c[1]:id};
 const store={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1800)};
-const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库",breakdown:"爆款拆解"};
+const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库"};
 
 /* --- 导航 --- */
 /* --- 模块密码锁（数据总览 / 财务与订单 / 数据看板） --- */
@@ -1695,7 +1673,6 @@ function switchMod(m){
   if(m==="delivered")renderDeliverAll();
   if(m==="metrics")loadMetrics();
   if(m==="videos")loadVideosMatch();
-  if(m==="breakdown"){ try{ setTimeout(()=>document.getElementById('bdInput').focus(),120); }catch(e){} }
   window.scrollTo(0,0);
 }
 $$(".nav-it").forEach(b=>b.onclick=()=>switchMod(b.dataset.m));
@@ -1748,41 +1725,6 @@ function renderMetrics(j){
   renderMetricsEnv();
 }
 
-/* ================= 爆款拆解（AI 调用 /api/breakdown） ================= */
-function bindBreakdown(){
-  const go = document.getElementById('bdGo');
-  const clr = document.getElementById('bdClear');
-  if(go) go.onclick = doBreakdown;
-  if(clr) clr.onclick = function(){
-    const i=document.getElementById('bdInput'); if(i) i.value='';
-    const r=document.getElementById('bdResult'); if(r) r.innerHTML='';
-    const m=document.getElementById('bdMsg'); if(m) m.textContent='';
-  };
-}
-async function doBreakdown(){
-  const input=document.getElementById('bdInput');
-  const msg=document.getElementById('bdMsg');
-  const t=window.wbGetToken && window.wbGetToken();
-  const text=(input.value||'').trim();
-  const platform=(document.getElementById('bdPlatform')||{}).value||'通用';
-  if(!text){ if(msg){msg.style.color='#c0392b';msg.textContent='请先粘贴视频链接或标题+描述';} return; }
-  if(msg){msg.style.color='#9a4a4a';msg.textContent='AI 拆解中…（约 10-30 秒，取决于模型）';}
-  const btn=document.getElementById('bdGo'); if(btn) btn.disabled=true;
-  try{
-    const j=await fetch('/api/breakdown?token='+encodeURIComponent(t||''),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,platform})}).then(r=>r.json());
-    if(j.configured===false){ if(msg){msg.style.color='#c0392b';msg.textContent=j.error||'未配置 LLM';} if(btn)btn.disabled=false; return; }
-    if(j.error){ if(msg){msg.style.color='#c0392b';msg.textContent=j.error+(j.hint?('（'+j.hint+'）'):'');} if(btn)btn.disabled=false; return; }
-    renderBreakdown(j); if(msg)msg.textContent='';
-  }catch(e){ if(msg){msg.style.color='#c0392b';msg.textContent='拆解失败：'+(e.message||e);} }
-  finally{ if(btn) btn.disabled=false; }
-}
-function renderBreakdown(j){
-  const result=document.getElementById('bdResult');
-  const dims=j.dimensions||[];
-  const sum=j.summary?'<div class="card" style="border:1.5px solid #ffd0d0;background:#fff8f8"><h3>📌 一句话定位</h3><p style="font-size:.9rem;line-height:1.7;color:#7a3030;margin:0">'+esc(j.summary)+'</p></div>':'';
-  const cards=dims.map(d=>'<div class="card" style="border-left:4px solid #ff5a5f"><h3>'+esc(d.title||'维度')+'</h3><p style="font-size:.86rem;line-height:1.8;color:#4a4036;white-space:pre-wrap;margin:0">'+esc(d.content||'')+'</p></div>').join('');
-  result.innerHTML=sum+cards; result.scrollIntoView({behavior:'smooth',block:'start'});
-}
 function renderMetricsDm(dms, plats, dmSummary){
   const el = document.getElementById('metricsDm');
   const list = (dms || []).filter(d => plats.indexOf(d.platform) >= 0);
@@ -3649,7 +3591,7 @@ $("#xqFinGo").onclick=()=>{
 };
 
 /* --- init --- */
-renderMyVideos();renderOverview();renderViral();renderHero();renderTopics();renderInsp();renderFinance();renderDeliverAll();bindBreakdown();checkDouyinStatus();setTimeout(()=>{try{try{pushDeliverStateToSW()}catch(e){}}catch(e){}},1500);
+renderMyVideos();renderOverview();renderViral();renderHero();renderTopics();renderInsp();renderFinance();renderDeliverAll();checkDouyinStatus();setTimeout(()=>{try{try{pushDeliverStateToSW()}catch(e){}}catch(e){}},1500);
 /* 微信预览环境提醒（只提醒一次/天） */
 if(ENV.wx&&store.get("wb_wxtip","")!==new Date().toISOString().slice(0,10)){
   const bar=document.createElement("div");

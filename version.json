@@ -1,13 +1,14 @@
 {
-  "version": "1.7.0",
-  "released": "2026-08-06",
-  "notes": "新增「数据分析」模块（模仿千瓜/市面数据分析工具）：读取后端 metrics 数据，提供账号概览、互动趋势折线图、爆款笔记识别、全部作品排行榜，支持按平台（全部/抖音/小红书）筛选。",
+  "version": "1.8.0",
+  "released": "2026-08-07",
+  "notes": "下线「数据分析」模块；新增「🧨 爆款拆解」AI 模块：粘贴视频链接/标题+描述，调用可配置的 LLM（OpenAI / DeepSeek / 混元 等兼容接口）按 9 维度拆解爆量逻辑并给出复刻方案，方法论源自婚摄爆款拆解框架。",
   "required": false,
-  "updatedAt": "2026-08-06T21:30:00+08:00",
-  "updated_at": "2026-08-06",
+  "updatedAt": "2026-08-07T19:50:00+08:00",
+  "updated_at": "2026-08-07",
   "changes": [
-    "后端：新增 /api/analytics 聚合接口（登录鉴权），从 metrics_works/metrics_daily/metrics_dm 计算 overview/trend/topWorks/dmSummary/lastSync",
-    "前端：新增「🔎 数据分析」导航（侧栏+手机更多菜单），千瓜式概览卡+互动趋势SVG折线（播放/点赞/评论/收藏可切换）+爆款笔记进度条+作品排行表",
-    "数据接入：直接消费工作台后端已同步的抖音/小红书账号数据，无需额外密钥或第三方 API"
+    "下线：移除 v1.7.0 的「数据分析」模块（前端导航/区块/JS + 后端 /api/analytics 路由）",
+    "后端：新增 /api/breakdown（登录鉴权），调用 LLM_API_KEY 配置的 OpenAI 兼容接口，按 9 维度输出结构化拆解报告；支持 server.env 配置 LLM_BASE_URL / LLM_API_KEY / LLM_MODEL",
+    "前端：新增「🧨 爆款拆解」导航（侧栏+手机更多菜单+底部Tab区），输入区+平台选择+9维度卡片式报告渲染",
+    "配置：新增 server.env.example，server.env 已被 .gitignore 忽略，密钥不进仓库"
   ]
 }

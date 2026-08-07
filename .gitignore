@@ -20,3 +20,11 @@ workbench_data.json
 # ===== 系统文件 =====
 .DS_Store
 Thumbs.db
+
+# ===== 服务端密钥配置（不进仓库） =====
+server.env
+
+# ===== 废弃的临时探针脚本（曾含 token，已清空并忽略） =====
+_probe.js
+_probe_push.js
+

@@ -456,13 +456,13 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
     <div class="nav-sec">数据中心</div>
     <button class="nav-it" data-m="videos"><span class="n-ic">🎬</span>我的视频<span class="n-badge" id="myCnt">0</span></button>
     <button class="nav-it" data-m="metrics"><span class="n-ic">📈</span>数据看板</button>
-    <button class="nav-it" data-m="analytics"><span class="n-ic">🔎</span>数据分析</button>
     <button class="nav-it" data-m="finance"><span class="n-ic">📒</span>财务与订单<span class="n-badge" id="ordCnt">0</span></button>
     <button class="nav-it on" data-m="overview"><span class="n-ic">📊</span>数据总览</button>
     <button class="nav-it" data-m="diagnosis"><span class="n-ic">🩺</span>账号诊断</button>
     <button class="nav-it" data-m="xiaoqing"><span class="n-ic">🌿</span>小青AI诊断</button>
     <div class="nav-sec">内容军火库</div>
     <button class="nav-it" data-m="viral"><span class="n-ic">🔥</span>婚礼拍摄灵感库<span class="n-badge" id="viralCnt">0</span></button>
+    <button class="nav-it" data-m="breakdown"><span class="n-ic">🧨</span>爆款拆解<span class="n-badge" style="background:#ff5a5f;color:#fff">AI</span></button>
     <div class="sync-card">
       <b>抖音数据同步</b> <span id="syncTime" style="font-weight:400;font-size:.72rem;color:#8a6a12">—</span><br>
       <span style="font-size:.72rem;color:#8a6a12">抖音号：40632468696</span>
@@ -597,41 +597,6 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
       </div>
     </section>
 
-    <!-- 数据分析（千瓜式概览） -->
-    <section class="modsec" id="mod-analytics">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-        <span class="vf-lab" style="font-size:.82rem">📱 平台</span>
-        <button class="vf-btn on" data-ap="all" onclick="loadAnalytics('all')">全部</button>
-        <button class="vf-btn" data-ap="douyin" onclick="loadAnalytics('douyin')">抖音</button>
-        <button class="vf-btn" data-ap="xhs" onclick="loadAnalytics('xhs')">小红书</button>
-        <span id="anSync" style="margin-left:auto;font-size:.74rem;color:var(--faint)"></span>
-      </div>
-
-      <div id="anOverview" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-bottom:14px"></div>
-
-      <div class="an-block">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px">
-          <h3 style="margin:0;font-size:.92rem">📈 互动趋势</h3>
-          <div style="display:flex;gap:6px">
-            <button class="vf-btn on" data-metric="play" onclick="anSwitchMetric('play')">播放</button>
-            <button class="vf-btn" data-metric="like" onclick="anSwitchMetric('like')">点赞</button>
-            <button class="vf-btn" data-metric="comment" onclick="anSwitchMetric('comment')">评论</button>
-            <button class="vf-btn" data-metric="collect" onclick="anSwitchMetric('collect')">收藏</button>
-          </div>
-        </div>
-        <div id="anTrend" style="background:#fff;border-radius:12px;padding:10px"></div>
-      </div>
-
-      <div class="an-block" style="margin-top:14px">
-        <h3 style="margin:0 0 8px;font-size:.92rem">🔥 爆款笔记（按互动率）</h3>
-        <div id="anTop" style="display:flex;flex-direction:column;gap:8px"></div>
-      </div>
-
-      <div class="an-block" style="margin-top:14px">
-        <h3 style="margin:0 0 8px;font-size:.92rem">📋 全部作品排行（按互动率）</h3>
-        <div id="anTable" style="overflow-x:auto"></div>
-      </div>
-    </section>
 
     <!-- 数据看板 -->
     <section class="modsec" id="mod-metrics">
@@ -912,6 +877,26 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
       <div id="sub-convert" class="sub-mod"><div id="convertList"></div></div>
     </section>
 
+    <!-- 爆款拆解（AI 自动版，调用工作台后端 /api/breakdown） -->
+    <section class="modsec" id="mod-breakdown">
+      <div class="card" style="background:linear-gradient(135deg,#fff3f3,#ffe9e9);border:1.5px solid #ffd0d0">
+        <h3 style="margin-top:0">🧨 爆款拆解 · AI 一键分析</h3>
+        <p style="font-size:.82rem;color:#9a4a4a;line-height:1.6;margin:0 0 10px">把一条你想研究的爆款视频的<b>链接</b>，或<b>标题+描述</b>粘贴进来，AI 会按 9 个维度拆解它的爆量逻辑，并给出可复制的复刻方案（基于婚摄爆款方法论）。</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <select id="bdPlatform" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:.84rem;background:#fff">
+            <option value="通用">📱 通用</option>
+            <option value="抖音">🎵 抖音</option>
+            <option value="小红书">📕 小红书</option>
+          </select>
+          <button class="btn" id="bdGo" style="background:#ff5a5f;color:#fff;border:none">🔥 开始拆解</button>
+          <button class="btn ghost" id="bdClear">清空</button>
+        </div>
+        <textarea id="bdInput" rows="5" placeholder="粘贴视频分享链接，或：&#10;标题：婚礼当天新郎偷偷做了这件事…&#10;描述：评论区都在问同款机位，其实我们用了…" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:.86rem;line-height:1.6"></textarea>
+        <div id="bdMsg" style="font-size:.76rem;margin-top:6px"></div>
+      </div>
+      <div id="bdResult" style="margin-top:14px"></div>
+    </section>
+
   </div>
 </div>
 
@@ -929,7 +914,7 @@ tr:hover td{background:linear-gradient(90deg,#fcfbf8,#fff)}
   <div class="ms-it" data-m="xiaoqing">🌿 小青AI诊断 · 视频体检</div>
   <div class="ms-it" data-m="diagnosis">🩺 账号诊断 · 7天破局计划</div>
   <div class="ms-it" data-m="metrics">📈 数据看板 · 抖音/小红书</div>
-  <div class="ms-it" data-m="analytics">🔎 数据分析 · 千瓜式概览</div>
+  <div class="ms-it" data-m="breakdown">🧨 爆款拆解 · AI一键分析</div>
 </div>
 
 <div id="mask"></div>
@@ -1661,7 +1646,7 @@ const codeForCat=val=>{if(!val)return "";val=String(val).trim();if(WB_DATA.cats.
 const fmtName=id=>{const c=WB_DATA.fmts.find(c=>c[0]===id);return c?c[1]:id};
 const store={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))};
 const toast=m=>{const t=$("#toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1800)};
-const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",analytics:"数据分析",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库"};
+const MOD_TITLES={delivered:"拍剪后期",overview:"数据总览",videos:"我的视频",metrics:"数据看板",finance:"财务与订单",diagnosis:"账号诊断",xiaoqing:"小青AI诊断",viral:"婚礼拍摄灵感库",breakdown:"爆款拆解"};
 
 /* --- 导航 --- */
 /* --- 模块密码锁（数据总览 / 财务与订单 / 数据看板） --- */
@@ -1709,8 +1694,8 @@ function switchMod(m){
 
   if(m==="delivered")renderDeliverAll();
   if(m==="metrics")loadMetrics();
-  if(m==="analytics")loadAnalytics();
   if(m==="videos")loadVideosMatch();
+  if(m==="breakdown"){ try{ setTimeout(()=>document.getElementById('bdInput').focus(),120); }catch(e){} }
   window.scrollTo(0,0);
 }
 $$(".nav-it").forEach(b=>b.onclick=()=>switchMod(b.dataset.m));
@@ -1727,96 +1712,6 @@ $("#syncTime").textContent="数据更新于 "+WB_DATA.updatedAt;
 let metricsCurPlat = 'all';
 function mFmt(n){ n=Number(n)||0; if(n>=1e8) return (n/1e8).toFixed(1)+'亿'; if(n>=1e4) return (n/1e4).toFixed(1)+'万'; return String(n); }
 function mCard(lab,val,sub){ return '<div class="stat"><div class="s-lab">'+lab+'</div><div class="s-val">'+val+'</div><div class="s-sub">'+(sub||'')+'</div></div>'; }
-/* ================= 数据分析（千瓜式概览，读取后端 /api/analytics） ================= */
-let anCurPlat='all', anCurMetric='play', __anData=null;
-const AN_GREEN='#5b7345';
-async function loadAnalytics(plat){
-  if(plat) anCurPlat=plat;
-  $$('#mod-analytics .vf-btn[data-ap]').forEach(b=>b.classList.toggle('on',b.dataset.ap===anCurPlat));
-  const t=window.wbGetToken && window.wbGetToken();
-  const box=$('anOverview');
-  if(!t){ box.innerHTML='<p style="color:var(--muted)">请先登录后再查看数据分析</p>'; return; }
-  try{
-    const j=await fetch('/api/analytics?token='+encodeURIComponent(t)+'&platform='+anCurPlat).then(r=>r.json());
-    if(j.error){ box.innerHTML='<p style="color:var(--muted)">'+esc(j.error)+'</p>'; return; }
-    __anData=j; renderAnalytics(j);
-  }catch(e){ console.error(e); box.innerHTML='<p style="color:var(--muted)">加载失败，请刷新重试</p>'; }
-}
-function anSwitchMetric(m){ anCurMetric=m; $$('#mod-analytics .vf-btn[data-metric]').forEach(b=>b.classList.toggle('on',b.dataset.metric===m)); renderTrend(__anData); }
-function renderAnalytics(j){
-  $('anSync').textContent = j.lastSync ? ('最近同步 '+fmtTime(j.lastSync)) : '暂无同步数据';
-  const o=j.overview||{};
-  const dm=j.dmSummary||{};
-  const dmTotal=(dm.xhs?dm.xhs.convs:0)+(dm.douyin?dm.douyin.convs:0);
-  const dmUnread=(dm.xhs?dm.xhs.unread:0)+(dm.douyin?dm.douyin.unread:0);
-  const cards=[
-    ['📝 笔记总数', mFmt(o.noteCount||0), ''],
-    ['▶️ 总播放', mFmt(o.totalPlay||0), ''],
-    ['❤️ 总点赞', mFmt(o.totalLike||0), ''],
-    ['⭐ 总收藏', mFmt(o.totalCollect||0), ''],
-    ['💬 总评论', mFmt(o.totalComment||0), ''],
-    ['🔁 平均互动率', (o.avgEngageRate||0)+'%', '互动/播放'],
-    ['👥 预估粉丝', mFmt(o.estFans||0), '按点赞推算'],
-    ['📨 私信会话', mFmt(dmTotal), '未读 '+mFmt(dmUnread)]
-  ];
-  $('anOverview').innerHTML = cards.map(c=>'<div style="background:#fff;border-radius:12px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)"><div style="font-size:1.15rem;font-weight:700;color:var(--ink)">'+c[1]+'</div><div style="font-size:.74rem;color:var(--muted);margin-top:3px">'+c[0]+'</div><div style="font-size:.66rem;color:var(--faint);margin-top:2px">'+c[2]+'</div></div>').join('');
-  renderTrend(j); renderTop(j.topWorks||[]); renderTable(j.works||[]);
-}
-function renderTrend(j){
-  const data=j||__anData; const box=$('anTrend'); if(!box) return;
-  const trend=(data&&data.trend)||[];
-  if(!trend.length){ box.innerHTML='<div class="chart-empty"><div class="icon">📈</div><p style="font-size:.85rem;color:var(--muted)">暂无趋势数据，跑一次同步后这里会显示互动趋势</p></div>'; return; }
-  const key=anCurMetric;
-  const max=Math.max(1,...trend.map(d=>(d[key]||0)));
-  const w=520,h=180,pad=30,n=trend.length;
-  const pts=trend.map((d,i)=>{ const x=pad+(w-2*pad)*(i/(n-1||1)); const y=h-pad-(h-2*pad)*((d[key]||0)/max); return [x,y,d.day,(d[key]||0)]; });
-  const line=pts.map(pt=>pt[0].toFixed(1)+','+pt[1].toFixed(1)).join(' ');
-  const area=pad+','+(h-pad)+' '+line+' '+(w-pad)+','+(h-pad);
-  let labels=''; for(let i=0;i<n;i++){ if(i%Math.ceil(n/6||1)===0||i===n-1){ labels+='<text x="'+pts[i][0].toFixed(1)+'" y="'+(h-8)+'" font-size="9" fill="#9aa0a6" text-anchor="middle">'+String(trend[i].day).slice(5)+'</text>'; } }
-  const dots=pts.map(pt=>'<circle cx="'+pt[0].toFixed(1)+'" cy="'+pt[1].toFixed(1)+'" r="3" fill="'+AN_GREEN+'"><title>'+pt[2]+'：'+mFmt(pt[3])+'</title></circle>').join('');
-  box.innerHTML='<svg viewBox="0 0 '+w+' '+h+'" width="100%" style="display:block">'+
-    '<polygon points="'+area+'" fill="rgba(91,115,69,.12)"/>'+
-    '<polyline points="'+line+'" fill="none" stroke="'+AN_GREEN+'" stroke-width="2.5"/>'+
-    dots+labels+
-    '<line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="#eee"/>'+
-    '<text x="'+pad+'" y="14" font-size="10" fill="#9aa0a6">'+metricLabel(key)+'（峰值 '+mFmt(max)+'）</text>'+
-    '</svg>';
-}
-function renderTop(top){
-  const box=$('anTop'); if(!box) return;
-  if(!top.length){ box.innerHTML='<div class="chart-empty"><div class="icon">🔥</div><p style="font-size:.85rem;color:var(--muted)">暂无作品数据</p></div>'; return; }
-  const max=Math.max(1,...top.map(w=>w.rate));
-  box.innerHTML=top.map(w=>{
-    const pct=(w.rate/max*100);
-    return '<div style="background:#fff;border-radius:10px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.04)">'+
-      '<div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:5px">'+
-        '<span style="color:var(--ink);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:68%">'+platIcon(w.platform)+' '+esc(w.title)+'</span>'+
-        '<span style="color:'+AN_GREEN+';font-weight:700">'+w.rate.toFixed(1)+'%</span>'+
-      '</div>'+
-      '<div style="height:7px;background:#f0f0f0;border-radius:4px;overflow:hidden"><div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,'+AN_GREEN+',#7a9460)"></div></div>'+
-      '<div style="font-size:.7rem;color:var(--muted);margin-top:5px">▶️'+mFmt(w.play)+' · ❤️'+mFmt(w.like)+' · ⭐'+mFmt(w.collect)+' · 💬'+mFmt(w.comment)+'</div>'+
-    '</div>';
-  }).join('');
-}
-function renderTable(works){
-  const box=$('anTable'); if(!box) return;
-  if(!works.length){ box.innerHTML='<div class="chart-empty"><div class="icon">📋</div><p style="font-size:.85rem;color:var(--muted)">暂无作品数据</p></div>'; return; }
-  const rows=works.map(w=>{ const eng=(w.like||0)+(w.collect||0)+(w.comment||0); const rate=(w.play||0)>0?(eng/w.play*100):0; return {w:w,eng:eng,rate:rate}; }).sort((a,b)=>b.rate-a.rate);
-  box.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:.78rem">'+
-    '<thead><tr style="color:var(--muted);text-align:left">'+
-      '<th style="padding:6px">笔记</th><th>平台</th><th>播放</th><th>点赞</th><th>收藏</th><th>评论</th><th>互动率</th>'+
-    '</tr></thead><tbody>'+
-    rows.map(r=>'<tr style="border-top:1px solid #f0f0f0">'+
-      '<td style="padding:6px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.w.title)+'</td>'+
-      '<td>'+platIcon(r.w.platform)+'</td>'+
-      '<td>'+mFmt(r.w.play)+'</td><td>'+mFmt(r.w.like)+'</td><td>'+mFmt(r.w.collect)+'</td><td>'+mFmt(r.w.comment)+'</td>'+
-      '<td style="color:'+AN_GREEN+';font-weight:700">'+r.rate.toFixed(1)+'%</td>'+
-    '</tr>').join('')+
-    '</tbody></table>';
-}
-function platIcon(p){ return p==='douyin'?'🎵':(p==='xhs'?'📕':'🌐'); }
-function metricLabel(m){ return {play:'播放量',like:'点赞数',comment:'评论数',collect:'收藏数'}[m]||m; }
-function fmtTime(s){ if(!s) return ''; const d=new Date(s); if(isNaN(d.getTime())) return String(s); return d.toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}); }
 
 async function loadMetrics(plat){
   if(plat) metricsCurPlat = plat;
@@ -1851,6 +1746,42 @@ function renderMetrics(j){
   document.getElementById('metricsSync').textContent = j.lastSync ? ('最近同步：'+new Date(j.lastSync).toLocaleString('zh-CN')) : '尚未同步';
   renderMetricsDm(j.dms || [], sp, j.dmSummary || {});
   renderMetricsEnv();
+}
+
+/* ================= 爆款拆解（AI 调用 /api/breakdown） ================= */
+function bindBreakdown(){
+  const go = document.getElementById('bdGo');
+  const clr = document.getElementById('bdClear');
+  if(go) go.onclick = doBreakdown;
+  if(clr) clr.onclick = function(){
+    const i=document.getElementById('bdInput'); if(i) i.value='';
+    const r=document.getElementById('bdResult'); if(r) r.innerHTML='';
+    const m=document.getElementById('bdMsg'); if(m) m.textContent='';
+  };
+}
+async function doBreakdown(){
+  const input=document.getElementById('bdInput');
+  const msg=document.getElementById('bdMsg');
+  const t=window.wbGetToken && window.wbGetToken();
+  const text=(input.value||'').trim();
+  const platform=(document.getElementById('bdPlatform')||{}).value||'通用';
+  if(!text){ if(msg){msg.style.color='#c0392b';msg.textContent='请先粘贴视频链接或标题+描述';} return; }
+  if(msg){msg.style.color='#9a4a4a';msg.textContent='AI 拆解中…（约 10-30 秒，取决于模型）';}
+  const btn=document.getElementById('bdGo'); if(btn) btn.disabled=true;
+  try{
+    const j=await fetch('/api/breakdown?token='+encodeURIComponent(t||''),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,platform})}).then(r=>r.json());
+    if(j.configured===false){ if(msg){msg.style.color='#c0392b';msg.textContent=j.error||'未配置 LLM';} if(btn)btn.disabled=false; return; }
+    if(j.error){ if(msg){msg.style.color='#c0392b';msg.textContent=j.error+(j.hint?('（'+j.hint+'）'):'');} if(btn)btn.disabled=false; return; }
+    renderBreakdown(j); if(msg)msg.textContent='';
+  }catch(e){ if(msg){msg.style.color='#c0392b';msg.textContent='拆解失败：'+(e.message||e);} }
+  finally{ if(btn) btn.disabled=false; }
+}
+function renderBreakdown(j){
+  const result=document.getElementById('bdResult');
+  const dims=j.dimensions||[];
+  const sum=j.summary?'<div class="card" style="border:1.5px solid #ffd0d0;background:#fff8f8"><h3>📌 一句话定位</h3><p style="font-size:.9rem;line-height:1.7;color:#7a3030;margin:0">'+esc(j.summary)+'</p></div>':'';
+  const cards=dims.map(d=>'<div class="card" style="border-left:4px solid #ff5a5f"><h3>'+esc(d.title||'维度')+'</h3><p style="font-size:.86rem;line-height:1.8;color:#4a4036;white-space:pre-wrap;margin:0">'+esc(d.content||'')+'</p></div>').join('');
+  result.innerHTML=sum+cards; result.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function renderMetricsDm(dms, plats, dmSummary){
   const el = document.getElementById('metricsDm');
@@ -3718,7 +3649,7 @@ $("#xqFinGo").onclick=()=>{
 };
 
 /* --- init --- */
-renderMyVideos();renderOverview();renderViral();renderHero();renderTopics();renderInsp();renderFinance();renderDeliverAll();checkDouyinStatus();setTimeout(()=>{try{try{pushDeliverStateToSW()}catch(e){}}catch(e){}},1500);
+renderMyVideos();renderOverview();renderViral();renderHero();renderTopics();renderInsp();renderFinance();renderDeliverAll();bindBreakdown();checkDouyinStatus();setTimeout(()=>{try{try{pushDeliverStateToSW()}catch(e){}}catch(e){}},1500);
 /* 微信预览环境提醒（只提醒一次/天） */
 if(ENV.wx&&store.get("wb_wxtip","")!==new Date().toISOString().slice(0,10)){
   const bar=document.createElement("div");
